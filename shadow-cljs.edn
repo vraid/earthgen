@@ -1,0 +1,29 @@
+{:nrepl {:port 8777}
+
+ 
+
+ :source-paths ["src" "test"]
+
+ :dependencies
+ [[reagent "1.1.1"]
+  [re-frame "1.4.2"]
+
+  [binaryage/devtools "1.0.6"]]
+
+ :dev-http
+ {8280 "resources/public"
+  8290 "target/browser-test"}
+
+ :builds
+ {:app
+  {:target     :browser
+   :output-dir "resources/public/js/compiled"
+   :asset-path "/js/compiled"
+   :modules
+   {:app {:init-fn earthgen.core/init}}
+   :devtools
+   {:preloads []}
+   :dev
+   {:compiler-options
+    {:closure-defines
+     { }}}}}}
