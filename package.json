@@ -8,7 +8,8 @@
 	},
 	"dependencies": {
 		"react": "17.0.2",
-		"react-dom": "17.0.2"
+		"react-dom": "17.0.2",
+		"seedrandom": "^3.0.5"
 	},
 	"devDependencies": {
 		"shadow-cljs": "2.26.2"
