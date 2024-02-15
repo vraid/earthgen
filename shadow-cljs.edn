@@ -7,6 +7,7 @@
  :dependencies
  [[reagent "1.1.1"]
   [re-frame "1.4.2"]
+  [thi.ng/geom "1.0.0-RC3"]
 
   [binaryage/devtools "1.0.6"]]
 

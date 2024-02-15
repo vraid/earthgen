@@ -1,12 +1,34 @@
 (ns earthgen.views
-  (:require
-   [re-frame.core :as re-frame]
-   [earthgen.subs :as subs]
-   ))
+  (:require [re-frame.core :as re-frame]
+            [reagent.core :as reagent]
+            [reagent.dom :as rdom]
+            [thi.ng.geom.gl.core :as gl]
+            [earthgen.subs :as subs]
+            [earthgen.events :as events]
+            [earthgen.graphics.core :as graphics]))
+
+(defn canvas-inner []
+  (let [mount (fn [canvas]
+                (let
+                 [shader (-> canvas rdom/dom-node gl/gl-context graphics/make-shader)]
+                  (re-frame/dispatch [::events/set-shader shader])))
+        update (fn [canvas]
+                 (let
+                  [props (reagent/props canvas)
+                   gl (gl/gl-context (rdom/dom-node canvas))]
+                   (graphics/draw-canvas gl (:shader props) (:models props))))]
+    (reagent/create-class
+     {:reagent-render (fn []
+                        [:canvas {:width 1000
+                                  :height 1000 
+                                  :style {:display "block"}}])
+      :component-did-mount mount
+      :component-did-update update
+      :display-name "gl-canvas"})))
+
+(defn canvas-outer []
+  (let [data (re-frame/subscribe [::subs/graphics])]
+    [canvas-inner @data]))
 
 (defn main-panel []
-  (let [name (re-frame/subscribe [::subs/name])]
-    [:div
-     [:h1
-      "Hello from " @name]
-     ]))
+  [canvas-outer])
