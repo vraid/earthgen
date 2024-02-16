@@ -1,6 +1,7 @@
 (ns earthgen.math.quaternion
   (:refer-clojure :exclude [identity])
-  (:require [earthgen.math.vector :as vector]))
+  (:require [earthgen.math.vector :as vector]
+            [earthgen.math.matrix :as matrix]))
 
 (def identity [1 0 0 0])
 
@@ -36,3 +37,18 @@
     (normal (cons (Math/cos a)
                   (vector/scale-by (Math/sin a)
                                    (vector/normal axis))))))
+
+(defn to-matrix [q]
+  (let
+   [[a b c d] q
+    [b2 c2 d2] (map (fn [n] (* n n)) [b c d])
+    [ab ac ad] (map (partial * a) [b c d])
+    bd (* b d)
+    bc (* b c)
+    cd (* c d)]
+    (matrix/sum
+     (matrix/identity 3)
+     (matrix/scale-by 2
+                      [[(- (+ c2 d2)) (- bc ad) (+ bd ac)]
+                       [(+ bc ad) (- (+ b2 d2)) (- cd ab)]
+                       [(- bd ac) (+ cd ab) (- (+ b2 c2))]]))))
