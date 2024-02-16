@@ -5,6 +5,7 @@
             [thi.ng.geom.gl.core :as gl]
             [earthgen.subs :as subs]
             [earthgen.events :as events]
+            [earthgen.input :as input]
             [earthgen.graphics.core :as graphics]))
 
 (defn canvas-inner []
@@ -15,12 +16,14 @@
         update (fn [canvas]
                  (let
                   [props (reagent/props canvas)
-                   gl (gl/gl-context (rdom/dom-node canvas))]
-                   (graphics/draw-canvas gl (:shader props) (:models props))))]
+                   gl (gl/gl-context (rdom/dom-node canvas))
+                   perspective (graphics/spherical (:perspective props) (gl/get-viewport-rect gl))]
+                   (graphics/draw-canvas gl (:shader props) perspective (:models props))))]
     (reagent/create-class
      {:reagent-render (fn []
                         [:canvas {:width 1000
-                                  :height 1000 
+                                  :height 1000
+                                  :on-mouse-down input/mouse-down
                                   :style {:display "block"}}])
       :component-did-mount mount
       :component-did-update update
@@ -31,4 +34,6 @@
     [canvas-inner @data]))
 
 (defn main-panel []
-  [canvas-outer])
+  [:div {:on-mouse-up input/mouse-up
+         :on-mouse-move input/mouse-move}
+   [canvas-outer]])

@@ -1,11 +1,9 @@
 (ns earthgen.core
-  (:require
-   [reagent.dom :as rdom]
-   [re-frame.core :as re-frame]
-   [earthgen.events :as events]
-   [earthgen.views :as views]
-   [earthgen.config :as config]
-   ))
+  (:require [reagent.dom :as rdom]
+            [re-frame.core :as re-frame]
+            [earthgen.events :as events]
+            [earthgen.views :as views]
+            [earthgen.config :as config]))
 
 
 (defn dev-setup []
@@ -21,4 +19,5 @@
 (defn init []
   (re-frame/dispatch-sync [::events/initialize-db])
   (dev-setup)
-  (mount-root))
+  (mount-root)
+  (re-frame/dispatch [::events/tick]))

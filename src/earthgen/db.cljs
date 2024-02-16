@@ -21,10 +21,18 @@
      subdivisions
      [(generation/with-seed seed)
       (terrain/heightmap granularity irregularity amplitude seed)
-      (terrain/sea-level sea-level)])]
+      (terrain/sea-level sea-level)])
+    perspective {:rotation {:latitude 0
+                            :longitude 0}
+                 :distance 3}]
     {:grids grids
      :planet planet
      :graphics {:shader nil
                 :models [(models/solid-tiles
                           map-modes/elevation
-                          planet)]}}))
+                          planet)]
+                :perspective perspective}
+     :perspective perspective
+     :time-per-frame 20
+     :mouse-down false
+     :mouse-event [:none [0 0]]}))
