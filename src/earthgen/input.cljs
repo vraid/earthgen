@@ -31,3 +31,44 @@
   (.preventDefault e)
   (re-frame/dispatch [::events/mouse-move
                       (mouse-coord e)]))
+
+(defn format-touches [ls]
+  (let
+   [count (.-length ls)
+    vec (mapv #(.item ls %)
+              (range count))]
+    (reduce (fn [d a]
+              (assoc d (.-identifier a) [(.-clientX a) (.-clientY a)]))
+            {}
+            vec)))
+
+(defn changed-touches [e]
+  (format-touches (.-changedTouches e)))
+
+(defn touches [e]
+  (format-touches (.-touches e)))
+
+(defn touch-start [e]
+  (.preventDefault e)
+  (re-frame/dispatch [::events/touch-start
+                      (touches e)
+                      (changed-touches e)
+                      {:bounding-rect (bounding-rect (.-target e))}]))
+
+(defn touch-end [e]
+  (.preventDefault e)
+  (re-frame/dispatch [::events/touch-end
+                      (touches e)
+                      (changed-touches e)]))
+
+(defn touch-move [e]
+  (.preventDefault e)
+  (re-frame/dispatch [::events/touch-move
+                      (touches e)
+                      (changed-touches e)]))
+
+(defn touch-cancel [e]
+  (.preventDefault e)
+  (re-frame/dispatch [::events/touch-cancel
+                      (touches e)
+                      (changed-touches e)]))

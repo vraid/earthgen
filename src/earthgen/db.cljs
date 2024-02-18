@@ -34,5 +34,7 @@
                 :perspective perspective}
      :perspective perspective
      :time-per-frame 20
-     :mouse-down false
-     :mouse-event [:none [0 0]]}))
+     :input {:mouse-down false
+             :mouse-event [:none [0 0]]
+             :touch-start false
+             :touch-event [:none [] []]}}))

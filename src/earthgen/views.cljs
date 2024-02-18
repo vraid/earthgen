@@ -24,6 +24,10 @@
                         [:canvas {:width 1000
                                   :height 1000
                                   :on-mouse-down input/mouse-down
+                                  :on-touch-start input/touch-start
+                                  :on-touch-end input/touch-end
+                                  :on-touch-move input/touch-move
+                                  :on-touch-cancel input/touch-cancel
                                   :style {:display "block"}}])
       :component-did-mount mount
       :component-did-update update
