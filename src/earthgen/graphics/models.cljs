@@ -51,18 +51,16 @@
                           (rest elements))))]
     (vertex-data vertex-buffer color-buffer face-count)))
 
-(defn project [[x y z]]
-  #js [x y z])
-
-(defn solid-tiles [color planet]
+(defn solid-tiles [projection color planet]
   (let
    [corners (:corners planet)]
     (to-model
      (mapv (fn [tile]
              (let
               [tile-center (:center tile)
-               center (project tile-center)
-               faces (grid/pairwise center (mapv (comp project :vertex (partial nth corners))
+               proj (projection (:center tile))
+               center (proj tile-center)
+               faces (grid/pairwise center (mapv (comp proj :vertex (partial nth corners))
                                                  (:corners tile)))
                face-count (count faces)
                tile-color ((color planet) tile)]

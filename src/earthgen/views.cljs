@@ -16,9 +16,10 @@
         update (fn [canvas]
                  (let
                   [props (reagent/props canvas)
+                   perspective (:perspective props)
                    gl (gl/gl-context (rdom/dom-node canvas))
-                   perspective (graphics/spherical (:perspective props) (gl/get-viewport-rect gl))]
-                   (graphics/draw-canvas gl (:shader props) perspective (:models props))))]
+                   camera ((:camera perspective) perspective (gl/get-viewport-rect gl))]
+                   (graphics/draw-canvas gl (:shader props) camera (:models props))))]
     (reagent/create-class
      {:reagent-render (fn []
                         [:canvas {:width 1000
@@ -37,7 +38,30 @@
   (let [data (re-frame/subscribe [::subs/graphics])]
     [canvas-inner @data]))
 
+(defn gettext [e] (-> e .-target .-value))
+
+(def button-style
+  {:padding "8px 8px"
+   :margin "4px 4px"})
+
+(defn view-section [view]
+  [:div
+   [:h3 "View"]
+   [:div
+    [:label "Projection "]
+    [:select.form-control
+     {:style button-style
+      :field :list
+      :id :projection-input
+      :value (get-in view [:perspectives (:current-perspective view) :name])
+      :on-change (fn [e] (re-frame/dispatch [::events/set-perspective (get {"Spherical" :spherical "Hammer" :hammer} (gettext e))]))}
+     [:option {:key :spherical} "Spherical"]
+     [:option {:key :hammer} "Hammer"]]]])
+
 (defn main-panel []
-  [:div {:on-mouse-up input/mouse-up
-         :on-mouse-move input/mouse-move}
-   [canvas-outer]])
+  (let
+   [view @(re-frame/subscribe [::subs/view])]
+    [:div {:on-mouse-up input/mouse-up
+           :on-mouse-move input/mouse-move}
+     [view-section view]
+     [canvas-outer]]))

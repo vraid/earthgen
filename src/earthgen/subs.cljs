@@ -4,3 +4,7 @@
 (re-frame/reg-sub
  ::graphics
  :graphics)
+
+(re-frame/reg-sub
+ ::view
+ :view)
