@@ -4,7 +4,7 @@
             [earthgen.perspective :as perspective]
             [earthgen.validation :as validation]
             [earthgen.generation.core :as generation]
-            [earthgen.generation.terrain :as terrain]
+            [earthgen.generation.generic :as generic]
             [earthgen.graphics.models :as models]
             [earthgen.graphics.map-modes :as map-modes]))
 
@@ -44,27 +44,43 @@
        update-current-perspective
        update-models)))
 
+(defn generate [db subdivisions input]
+  (try
+    (let
+     [grids (:grids db)
+      subdivisions (validation/validate-subdivisions subdivisions)
+      model (generic/from-input input)
+      [_ planet] (generation/transform
+                  grids
+                  subdivisions
+                  (generic/input-transforms model))]
+      (-> db
+          (assoc :model model)
+          (assoc-in [:view :subdivisions] (str subdivisions))
+          (assoc :planet planet)
+          update-models))
+    (catch js/Object _ (assoc db :model ""))))
+
 (re-frame/reg-event-db
  ::generate
  (fn [db [_ subdivisions input]]
+   (generate db subdivisions input)))
+
+(re-frame/reg-event-db
+ ::generate-simple
+ (fn [db [_ subdivisions input]]
    (let
     [validated (validation/validate-terrain input)
-     subdivisions (validation/validate-subdivisions subdivisions)
-     param (partial get-in validated)
-     [_ planet] (generation/transform
-                 (:grids db)
-                 subdivisions
-                 [(generation/with-seed (param [:seed]))
-                  (terrain/heightmap (param [:granularity])
-                                     (param [:irregularity])
-                                     (param [:amplitude])
-                                     (param [:seed]))
-                  (terrain/sea-level (param [:sea-level]))])]
+     param (partial get-in validated)]
      (-> db
-         (assoc-in [:view :subdivisions] (str subdivisions))
          (assoc-in [:view :simple-terrain] input)
-         (assoc :planet planet)
-         update-models))))
+         (generate subdivisions
+                   (generic/terrain (param [:seed])
+                                    (param [:sea-level])
+                                    (generic/heightmap
+                                     {:granularity (param [:granularity])
+                                      :irregularity (param [:irregularity])
+                                      :amplitude (param [:amplitude])})))))))
 
 (re-frame/reg-event-fx
  ::tick

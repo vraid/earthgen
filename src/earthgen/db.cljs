@@ -7,7 +7,7 @@
             [earthgen.graphics.map-modes :as map-modes]
             [earthgen.grid.core :as grid]
             [earthgen.generation.core :as generation]
-            [earthgen.generation.terrain :as terrain]
+            [earthgen.generation.generic :as generic]
             [earthgen.validation :as validation]))
 
 (def default-db
@@ -24,12 +24,16 @@
                     :irregularity irregularity
                     :amplitude amplitude
                     :sea-level sea-level}
+    model (generic/terrain seed
+                           sea-level
+                           (generic/heightmap
+                            {:granularity granularity
+                             :irregularity irregularity
+                             :amplitude amplitude}))
     [_ planet] (generation/transform
                 grids
                 subdivisions
-                [(generation/with-seed seed)
-                 (terrain/heightmap granularity irregularity amplitude seed)
-                 (terrain/sea-level sea-level)])
+                (generic/input-transforms model))
     perspectives
     {:spherical
      {:name "Spherical"
@@ -55,7 +59,9 @@
                           planet)]
                 :perspective (get perspectives current-perspective)}
      :perspectives perspectives
+     :model model
      :view {:subdivisions (str subdivisions)
+            :mode :simple
             :simple-terrain (validation/simple-terrain-str-values simple-terrain)
             :current-perspective current-perspective}
      :time-per-frame 20

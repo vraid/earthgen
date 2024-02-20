@@ -68,7 +68,19 @@
     (input [:simple-terrain :sea-level])]
    [:sup "Floods the land"]
    [:div
-    (button "Generate" (fn [_] (re-frame/dispatch [::events/generate (:subdivisions view) (:simple-terrain view)])))]])
+    (button "Generate" (fn [_] (re-frame/dispatch [::events/generate-simple (:subdivisions view) (:simple-terrain view)])))]])
+
+(defn custom-mode [view update-input button]
+  [:div
+   [:h3]
+   [:div "Input text to recreate a previous result,"]
+   [:div "or change the parameters to try something new"]
+   [:textarea {:cols 40
+               :rows 8
+               :value (:custom view)
+               :on-change (update-input [:custom])}]
+   [:div
+    (button "Generate" (fn [_] (re-frame/dispatch [::events/generate (:subdivisions view) (js->clj (.parse js/JSON (:custom view)) :keywordize-keys true)])))]])
 
 (defn view-section [view]
   [:div
@@ -79,7 +91,7 @@
      {:style button-style
       :field :list
       :id :projection-input
-      :value (get-in view [:perspectives (:current-perspective view) :name])
+      :value (get-in view [(:current-perspective view) :name])
       :on-change (fn [e] (re-frame/dispatch [::events/set-perspective (get {"Spherical" :spherical "Hammer" :hammer} (gettext e))]))}
      [:option {:key :spherical} "Spherical"]
      [:option {:key :hammer} "Hammer"]]]])
@@ -87,11 +99,17 @@
 (defn main-panel []
   (let
    [view @(re-frame/subscribe [::subs/view])
+    mode (:mode view)
+    model @(re-frame/subscribe [::subs/model])
     subdivisions (parse-long (:subdivisions view))
     subdivisions (or (and subdivisions (max 0 subdivisions)) 0)
     update-input (fn [keys]
                    (fn [e] (re-frame/dispatch
                             [::events/set-view (assoc-in view keys (gettext e))])))
+    set-mode (fn [mode]
+               (fn [_]
+                 (re-frame/dispatch
+                  [::events/set-view (assoc view :mode mode)])))
     input (fn [keys]
             [:input {:type "text"
                      :value (get-in view keys)
@@ -115,7 +133,19 @@
                         " will create "
                         (+ 2 (* 10 (Math/pow 3 subdivisions)))
                         " polygons")]])
-     [generation view input button]
+     [:div
+      [:b "Terrain : "]
+      (if (= :simple mode) "Simple" (button "Simple" (set-mode :simple)))
+      (if (= :custom mode) "Text input" (button "Text input" (set-mode :custom)))]
+     (case mode
+       :simple [generation view input button]
+       :custom [custom-mode view update-input button])
      [:h3]
+     [:b "Output"]
+     [:div [:sub "Copy-paste into the text input box to recreate"]]
+     [:textarea {:cols 40
+                 :rows 8
+                 :read-only true
+                 :value (.stringify js/JSON (clj->js model))}]
      [view-section view]
      [canvas-outer]]))

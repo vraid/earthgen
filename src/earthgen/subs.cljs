@@ -8,3 +8,7 @@
 (re-frame/reg-sub
  ::view
  :view)
+
+(re-frame/reg-sub
+ ::model
+ :model)
