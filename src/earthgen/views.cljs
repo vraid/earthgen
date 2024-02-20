@@ -44,6 +44,32 @@
   {:padding "8px 8px"
    :margin "4px 4px"})
 
+(defn generation [view input button]
+  [:div
+   [:h3 " "]
+   [:div
+    "Seed "
+    (input [:simple-terrain :seed])]
+   [:sup "Any text. Each seed will give the same result across different devices"]
+   [:div
+    "Granularity "
+    (input [:simple-terrain :granularity])]
+   [:sup "[0, 1, 2 ...] Lower values result in larger oceans and continents"]
+   [:div
+    "Irregularity "
+    (input [:simple-terrain :irregularity])]
+   [:sup "0-1. Lower values result in a smoother topography"]
+   [:div
+    "Amplitude "
+    (input [:simple-terrain :amplitude])]
+   [:sup "Any number. Elevation scales linearly to this value"]
+   [:div
+    "Sea level "
+    (input [:simple-terrain :sea-level])]
+   [:sup "Floods the land"]
+   [:div
+    (button "Generate" (fn [_] (re-frame/dispatch [::events/generate (:subdivisions view) (:simple-terrain view)])))]])
+
 (defn view-section [view]
   [:div
    [:h3 "View"]
@@ -60,8 +86,36 @@
 
 (defn main-panel []
   (let
-   [view @(re-frame/subscribe [::subs/view])]
+   [view @(re-frame/subscribe [::subs/view])
+    subdivisions (parse-long (:subdivisions view))
+    subdivisions (or (and subdivisions (max 0 subdivisions)) 0)
+    update-input (fn [keys]
+                   (fn [e] (re-frame/dispatch
+                            [::events/set-view (assoc-in view keys (gettext e))])))
+    input (fn [keys]
+            [:input {:type "text"
+                     :value (get-in view keys)
+                     :on-change (update-input keys)}])
+    button (fn [label on-click]
+             [:button
+              {:style button-style
+               :on-click on-click}
+              label])]
     [:div {:on-mouse-up input/mouse-up
            :on-mouse-move input/mouse-move}
+     [:h1 "Earthgen"]
+     [:b "Grid"]
+     [:div.color-input
+      "Subdivisions "
+      (input [:subdivisions])]
+     [:div [:sup "[0, 1, 2 ...] Each increment roughly triples the polygon count. Recommended 6-8"]]
+     (when subdivisions
+       [:div [:sup (str subdivisions " "
+                        (if (= 1 subdivisions) "subdivision" "subdivisions")
+                        " will create "
+                        (+ 2 (* 10 (Math/pow 3 subdivisions)))
+                        " polygons")]])
+     [generation view input button]
+     [:h3]
      [view-section view]
      [canvas-outer]]))

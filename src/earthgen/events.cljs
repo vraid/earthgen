@@ -2,6 +2,9 @@
   (:require [re-frame.core :as re-frame]
             [earthgen.db :as db]
             [earthgen.perspective :as perspective]
+            [earthgen.validation :as validation]
+            [earthgen.generation.core :as generation]
+            [earthgen.generation.terrain :as terrain]
             [earthgen.graphics.models :as models]
             [earthgen.graphics.map-modes :as map-modes]))
 
@@ -14,6 +17,11 @@
  ::set-shader
  (fn [db [_ shader]]
    (assoc-in db [:graphics :shader] shader)))
+
+(re-frame/reg-event-db
+ ::set-view
+ (fn [db [_ view]]
+   (assoc db :view view)))
 
 (defn update-models [db]
   (assoc-in db
@@ -35,6 +43,28 @@
        (assoc-in [:view :current-perspective] key)
        update-current-perspective
        update-models)))
+
+(re-frame/reg-event-db
+ ::generate
+ (fn [db [_ subdivisions input]]
+   (let
+    [validated (validation/validate-terrain input)
+     subdivisions (validation/validate-subdivisions subdivisions)
+     param (partial get-in validated)
+     [_ planet] (generation/transform
+                 (:grids db)
+                 subdivisions
+                 [(generation/with-seed (param [:seed]))
+                  (terrain/heightmap (param [:granularity])
+                                     (param [:irregularity])
+                                     (param [:amplitude])
+                                     (param [:seed]))
+                  (terrain/sea-level (param [:sea-level]))])]
+     (-> db
+         (assoc-in [:view :subdivisions] (str subdivisions))
+         (assoc-in [:view :simple-terrain] input)
+         (assoc :planet planet)
+         update-models))))
 
 (re-frame/reg-event-fx
  ::tick

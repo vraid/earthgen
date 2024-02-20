@@ -7,7 +7,8 @@
             [earthgen.graphics.map-modes :as map-modes]
             [earthgen.grid.core :as grid]
             [earthgen.generation.core :as generation]
-            [earthgen.generation.terrain :as terrain]))
+            [earthgen.generation.terrain :as terrain]
+            [earthgen.validation :as validation]))
 
 (def default-db
   (let
@@ -18,13 +19,17 @@
     irregularity 0.4
     amplitude 8000
     sea-level 3000
-    [_ planet]
-    (generation/transform
-     grids
-     subdivisions
-     [(generation/with-seed seed)
-      (terrain/heightmap granularity irregularity amplitude seed)
-      (terrain/sea-level sea-level)])
+    simple-terrain {:seed seed
+                    :granularity granularity
+                    :irregularity irregularity
+                    :amplitude amplitude
+                    :sea-level sea-level}
+    [_ planet] (generation/transform
+                grids
+                subdivisions
+                [(generation/with-seed seed)
+                 (terrain/heightmap granularity irregularity amplitude seed)
+                 (terrain/sea-level sea-level)])
     perspectives
     {:spherical
      {:name "Spherical"
@@ -50,7 +55,9 @@
                           planet)]
                 :perspective (get perspectives current-perspective)}
      :perspectives perspectives
-     :view {:current-perspective current-perspective}
+     :view {:subdivisions (str subdivisions)
+            :simple-terrain (validation/simple-terrain-str-values simple-terrain)
+            :current-perspective current-perspective}
      :time-per-frame 20
      :input {:mouse-down false
              :mouse-event [:none [0 0]]
