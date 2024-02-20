@@ -8,6 +8,7 @@
             [earthgen.grid.core :as grid]
             [earthgen.generation.core :as generation]
             [earthgen.generation.generic :as generic]
+            [earthgen.generation.operations :as ops]
             [earthgen.validation :as validation]))
 
 (def default-db
@@ -24,12 +25,12 @@
                     :irregularity irregularity
                     :amplitude amplitude
                     :sea-level sea-level}
-    model (generic/terrain seed
-                           sea-level
-                           (generic/heightmap
-                            {:granularity granularity
-                             :irregularity irregularity
-                             :amplitude amplitude}))
+    model (ops/terrain seed
+                       sea-level
+                       (ops/heightmap
+                        {:granularity granularity
+                         :irregularity irregularity
+                         :amplitude amplitude}))
     [_ planet] (generation/transform
                 grids
                 subdivisions

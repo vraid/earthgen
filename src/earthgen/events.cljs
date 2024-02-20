@@ -4,6 +4,7 @@
             [earthgen.perspective :as perspective]
             [earthgen.validation :as validation]
             [earthgen.generation.core :as generation]
+            [earthgen.generation.operations :as ops]
             [earthgen.generation.generic :as generic]
             [earthgen.graphics.models :as models]
             [earthgen.graphics.map-modes :as map-modes]))
@@ -75,12 +76,12 @@
      (-> db
          (assoc-in [:view :simple-terrain] input)
          (generate subdivisions
-                   (generic/terrain (param [:seed])
-                                    (param [:sea-level])
-                                    (generic/heightmap
-                                     {:granularity (param [:granularity])
-                                      :irregularity (param [:irregularity])
-                                      :amplitude (param [:amplitude])})))))))
+                   (ops/terrain (param [:seed])
+                                (param [:sea-level])
+                                (ops/heightmap
+                                 {:granularity (param [:granularity])
+                                  :irregularity (param [:irregularity])
+                                  :amplitude (param [:amplitude])})))))))
 
 (re-frame/reg-event-fx
  ::tick
