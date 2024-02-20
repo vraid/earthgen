@@ -1,6 +1,5 @@
 (ns earthgen.grid.core
-  (:require [earthgen.math.vector :as vector]
-            [earthgen.grid.icosahedron :as icosahedron]))
+  (:require [earthgen.grid.icosahedron :as icosahedron]))
 
 (defn get-tile [tiles]
   (partial nth tiles))
@@ -9,28 +8,58 @@
   (comp :center (get-tile tiles)))
 
 (defn pairwise [initial ls]
-  (mapv (fn [a b]
-          (if initial [initial a b] [a b]))
-        ls
-        (conj (vec (rest ls)) (first ls))))
+  (let
+   [last (first ls)]
+    (persistent!
+     (loop [a last
+            ls (rest ls)
+            result (transient [])]
+       (if (empty? ls)
+         (conj! result (if initial [initial a last] [a last]))
+         (let
+          [b (first ls)]
+           (recur b (rest ls) (conj! result (if initial [initial a b] [a b])))))))))
+
+(defn square [a] (* a a))
+
+(defn midpoint [[x1 y1 z1]]
+  (fn [[x2 y2 z2]
+       [x3 y3 z3]]
+    (let
+     [x (+ x1 x2 x3)
+      y (+ y1 y2 y3)
+      z (+ z1 z2 z3)
+      scale (/ 1 (Math/sqrt (+ (square x) (square y) (square z))))]
+      [(* scale x) (* scale y) (* scale z)])))
 
 (defn create-corners [tile-vec old-tiles]
   (let
    [tile-center (tile-center tile-vec)]
-    (map-indexed
-     (fn [id a] (assoc a :id id))
-     (mapcat
-      (fn [{:keys [id center tiles]}]
-        (mapcat
-         (fn [[a b]]
-           (let
-            [corner (and (< id a)
-                         (< id b)
-                         {:tiles [id a b]
-                          :vertex (vector/normal (reduce vector/sum center (map tile-center [a b])))})]
-             (if corner [corner] [])))
-         (pairwise false tiles)))
-      old-tiles))))
+    (persistent!
+     (loop [n 0
+            ls old-tiles
+            result (transient [])]
+       (if (empty? ls)
+         result
+         (let
+          [{:keys [id center tiles]} (first ls)
+           midpoint (midpoint center)
+           [n result] (loop [n n
+                             ls (pairwise false tiles)
+                             result result]
+                        (if (empty? ls)
+                          [n result]
+                          (let
+                           [[a b] (first ls)
+                            corner (and (< id a)
+                                        (< id b)
+                                        {:id n
+                                         :tiles [id a b]
+                                         :vertex (midpoint (tile-center a) (tile-center b))})]
+                            (if corner
+                              (recur (inc n) (rest ls) (conj! result corner))
+                              (recur n (rest ls) result)))))]
+           (recur n (rest ls) result)))))))
 
 (defn tile-with-corners [corner-vec]
   (let
