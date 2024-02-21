@@ -8,13 +8,13 @@
             [earthgen.grid.core :as grid]
             [earthgen.generation.core :as generation]
             [earthgen.generation.generic :as generic]
-            [earthgen.generation.operations :as ops]
+            [earthgen.generation.predefined :as predefined]
             [earthgen.validation :as validation]))
 
 (def default-db
   (let
    [grids (iterate grid/subdivide (grid/initial))
-    subdivisions 5
+    subdivisions 7
     seed (random/random-seed 12)
     granularity 2
     irregularity 0.4
@@ -25,12 +25,7 @@
                     :irregularity irregularity
                     :amplitude amplitude
                     :sea-level sea-level}
-    model (ops/terrain seed
-                       sea-level
-                       (ops/heightmap
-                        {:granularity granularity
-                         :irregularity irregularity
-                         :amplitude amplitude}))
+    model (predefined/continents)
     [_ planet] (generation/transform
                 grids
                 subdivisions
@@ -62,7 +57,7 @@
      :perspectives perspectives
      :model model
      :view {:subdivisions (str subdivisions)
-            :mode :simple
+            :mode :predefined
             :simple-terrain (validation/simple-terrain-str-values simple-terrain)
             :current-perspective current-perspective}
      :time-per-frame 20

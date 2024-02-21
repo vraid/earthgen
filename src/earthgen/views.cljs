@@ -6,7 +6,8 @@
             [earthgen.subs :as subs]
             [earthgen.events :as events]
             [earthgen.input :as input]
-            [earthgen.graphics.core :as graphics]))
+            [earthgen.graphics.core :as graphics]
+            [earthgen.generation.predefined :as predefined]))
 
 (defn canvas-inner []
   (let [mount (fn [canvas]
@@ -44,7 +45,7 @@
   {:padding "8px 8px"
    :margin "4px 4px"})
 
-(defn generation [view input button]
+(defn simple-mode [generate input button]
   [:div
    [:h3 " "]
    [:div
@@ -68,9 +69,9 @@
     (input [:simple-terrain :sea-level])]
    [:sup "Floods the land"]
    [:div
-    (button "Generate" (fn [_] (re-frame/dispatch [::events/generate-simple (:subdivisions view) (:simple-terrain view)])))]])
+    (button "Generate" generate)]])
 
-(defn custom-mode [view update-input button]
+(defn custom-mode [generate view update-input button]
   [:div
    [:h3]
    [:div "Input text to recreate a previous result,"]
@@ -80,7 +81,17 @@
                :value (:custom view)
                :on-change (update-input [:custom])}]
    [:div
-    (button "Generate" (fn [_] (re-frame/dispatch [::events/generate (:subdivisions view) (js->clj (.parse js/JSON (:custom view)) :keywordize-keys true)])))]])
+    (button "Generate" (generate (js->clj (.parse js/JSON (:custom view)) :keywordize-keys true)))]])
+
+(defn predefined-mode [generate button]
+  [:div
+   [:h3]
+   [:div "Press a button to generate a planet of that type"]
+   [:div "Results will trend towards description, but may sometimes diverge"]
+   [:div
+    (button "Continents" (generate (predefined/continents)))
+    (button "Supercontinents" (generate (predefined/supercontinents)))
+    (button "Archipelago" (generate (predefined/archipelago)))]])
 
 (defn view-section [view]
   [:div
@@ -101,8 +112,10 @@
    [view @(re-frame/subscribe [::subs/view])
     mode (:mode view)
     model @(re-frame/subscribe [::subs/model])
-    subdivisions (parse-long (:subdivisions view))
-    subdivisions (or (and subdivisions (max 0 subdivisions)) 0)
+    subdivisions (:subdivisions view)
+    generate-model (fn [model]
+                     (fn [_]
+                       (re-frame/dispatch [::events/generate subdivisions model])))
     update-input (fn [keys]
                    (fn [e] (re-frame/dispatch
                             [::events/set-view (assoc-in view keys (gettext e))])))
@@ -127,19 +140,32 @@
       "Subdivisions "
       (input [:subdivisions])]
      [:div [:sup "[0, 1, 2 ...] Each increment roughly triples the polygon count. Recommended 6-8"]]
-     (when subdivisions
-       [:div [:sup (str subdivisions " "
-                        (if (= 1 subdivisions) "subdivision" "subdivisions")
+     [:div [:sup (let
+                  [parsed (parse-long subdivisions)
+                   num (or (and parsed (max 0 parsed)) 0)]
+                   (str num " "
+                        (if (= 1 num) "subdivision" "subdivisions")
                         " will create "
-                        (+ 2 (* 10 (Math/pow 3 subdivisions)))
-                        " polygons")]])
+                        (+ 2 (* 10 (Math/pow 3 num)))
+                        " polygons"))]]
      [:div
       [:b "Terrain : "]
+      (if (= :predefined mode) "Suggested" (button "Suggested" (set-mode :predefined)))
       (if (= :simple mode) "Simple" (button "Simple" (set-mode :simple)))
       (if (= :custom mode) "Text input" (button "Text input" (set-mode :custom)))]
      (case mode
-       :simple [generation view input button]
-       :custom [custom-mode view update-input button])
+       :predefined [predefined-mode
+                    generate-model
+                    button]
+       :simple [simple-mode
+                (fn [_] (re-frame/dispatch [::events/generate-simple subdivisions (:simple-terrain view)]))
+                input
+                button]
+       :custom [custom-mode
+                generate-model
+                view
+                update-input
+                button])
      [:h3]
      [:b "Output"]
      [:div [:sub "Copy-paste into the text input box to recreate"]]
