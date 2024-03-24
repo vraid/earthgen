@@ -72,16 +72,22 @@
     (button "Generate" generate)]])
 
 (defn custom-mode [generate view update-input button]
-  [:div
-   [:h3]
-   [:div "Input text to recreate a previous result,"]
-   [:div "or change the parameters to try something new"]
-   [:textarea {:cols 40
-               :rows 8
-               :value (:custom view)
-               :on-change (update-input [:custom])}]
-   [:div
-    (button "Generate" (generate (js->clj (.parse js/JSON (:custom view)) :keywordize-keys true)))]])
+  (let
+   [to-input #(js->clj (.parse js/JSON (:custom view)) :keywordize-keys true)
+    valid? (try (to-input)
+                (catch js/Object _ false))]
+    [:div
+     [:h3]
+     [:div "Input text to recreate a previous result,"]
+     [:div "or change the parameters to try something new"]
+     [:textarea {:cols 40
+                 :rows 8
+                 :value (:custom view)
+                 :on-change (update-input [:custom])}]
+     (if valid?
+       [:div
+        (button "Generate" (generate to-input))]
+       [:div "Invalid JSON"])]))
 
 (defn predefined-mode [generate button]
   [:div
@@ -89,9 +95,9 @@
    [:div "Press a button to generate a planet of that type"]
    [:div "Results will trend towards description, but may sometimes diverge"]
    [:div
-    (button "Continents" (generate (predefined/continents)))
-    (button "Supercontinents" (generate (predefined/supercontinents)))
-    (button "Archipelago" (generate (predefined/archipelago)))]])
+    (button "Continents" (generate predefined/continents))
+    (button "Supercontinents" (generate predefined/supercontinents))
+    (button "Archipelago" (generate predefined/archipelago))]])
 
 (defn view-section [view]
   [:div
@@ -115,7 +121,7 @@
     subdivisions (:subdivisions view)
     generate-model (fn [model]
                      (fn [_]
-                       (re-frame/dispatch [::events/generate subdivisions model])))
+                       (re-frame/dispatch [::events/generate subdivisions (model)])))
     update-input (fn [keys]
                    (fn [e] (re-frame/dispatch
                             [::events/set-view (assoc-in view keys (gettext e))])))
@@ -148,7 +154,7 @@
                         " will create "
                         (+ 2 (* 10 (Math/pow 3 num)))
                         " polygons"))]]
-     [:div 
+     [:div
       "Timeout (ms) "
       (input [:subdivision-timeout])]
      [:div [:sup "Limits grid size if subdivision takes too long. No limit if empty"]]
@@ -162,7 +168,7 @@
                     generate-model
                     button]
        :simple [simple-mode
-                (fn [_] (re-frame/dispatch [::events/generate-simple subdivisions (:simple-terrain view)]))
+                #(re-frame/dispatch [::events/generate-simple subdivisions (:simple-terrain view)])
                 input
                 button]
        :custom [custom-mode

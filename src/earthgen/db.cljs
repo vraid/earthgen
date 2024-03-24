@@ -61,6 +61,7 @@
             :subdivision-timeout (str timeout)
             :mode :predefined
             :simple-terrain (validation/simple-terrain-str-values simple-terrain)
+            :custom ""
             :current-perspective current-perspective}
      :time-per-frame 20
      :input {:mouse-down false
