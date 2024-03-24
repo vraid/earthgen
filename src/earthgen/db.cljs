@@ -13,8 +13,9 @@
 
 (def default-db
   (let
-   [grids (iterate grid/subdivide (grid/initial))
-    subdivisions 7
+   [grids (iterate generation/timed-subdivision [0 (grid/initial)])
+    timeout 1000
+    [subdivisions used-grids] (generation/grids-with-timeout grids timeout 20)
     seed (random/random-seed 12)
     granularity 2
     irregularity 0.4
@@ -26,10 +27,10 @@
                     :amplitude amplitude
                     :sea-level sea-level}
     model (predefined/continents)
-    [_ planet] (generation/transform
-                grids
-                subdivisions
-                (generic/input-transforms model))
+    [_ planet]
+    (generation/transform
+     used-grids
+     (generic/input-transforms model))
     perspectives
     {:spherical
      {:name "Spherical"
@@ -57,6 +58,7 @@
      :perspectives perspectives
      :model model
      :view {:subdivisions (str subdivisions)
+            :subdivision-timeout (str timeout)
             :mode :predefined
             :simple-terrain (validation/simple-terrain-str-values simple-terrain)
             :current-perspective current-perspective}

@@ -136,7 +136,7 @@
            :on-mouse-move input/mouse-move}
      [:h1 "Earthgen"]
      [:b "Grid"]
-     [:div.color-input
+     [:div
       "Subdivisions "
       (input [:subdivisions])]
      [:div [:sup "[0, 1, 2 ...] Each increment roughly triples the polygon count. Recommended 6-8"]]
@@ -148,6 +148,10 @@
                         " will create "
                         (+ 2 (* 10 (Math/pow 3 num)))
                         " polygons"))]]
+     [:div 
+      "Timeout (ms) "
+      (input [:subdivision-timeout])]
+     [:div [:sup "Limits grid size if subdivision takes too long. No limit if empty"]]
      [:div
       [:b "Terrain : "]
       (if (= :predefined mode) "Suggested" (button "Suggested" (set-mode :predefined)))

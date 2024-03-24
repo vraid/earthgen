@@ -5,6 +5,13 @@
    [subdivisions (parse-long a)]
     (if subdivisions (max 0 subdivisions) 0)))
 
+(defn validate-timeout [a]
+  (let
+   [timeout (parse-long a)]
+    (and timeout
+         (< 0 timeout)
+         timeout)))
+
 (defn validate-terrain [a]
   (let
    [seed (:seed a)

@@ -48,16 +48,20 @@
 (defn generate [db subdivisions input]
   (try
     (let
-     [grids (:grids db)
-      subdivisions (validation/validate-subdivisions subdivisions)
+     [timeout (validation/validate-timeout (get-in db [:view :subdivision-timeout]))
+      [subdivisions grids]
+      (generation/grids-with-timeout
+       (:grids db)
+       timeout
+       (validation/validate-subdivisions subdivisions))
       model (generic/from-input input)
       [_ planet] (generation/transform
                   grids
-                  subdivisions
                   (generic/input-transforms model))]
       (-> db
           (assoc :model model)
           (assoc-in [:view :subdivisions] (str subdivisions))
+          (assoc-in [:view :subdivision-timeout] (if timeout (str timeout) ""))
           (assoc :planet planet)
           update-models))
     (catch js/Object _ (assoc db :model ""))))
