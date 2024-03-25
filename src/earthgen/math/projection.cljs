@@ -1,5 +1,6 @@
 (ns earthgen.math.projection
-  (:refer-clojure :exclude [identity]))
+  (:refer-clojure :exclude [identity])
+  (:require [earthgen.math.quaternion :as quaternion]))
 
 (defn identity [_]
   (fn [[x y z]]
@@ -28,3 +29,8 @@
         #js [(* scale 2 cos-latitude sin-longitude)
              (* scale sin-latitude)
              0]))))
+
+(defn latitude-longitude-rotation [latitude longitude]
+  (quaternion/product-normal
+   (quaternion/from-axis-angle [0 0 1] longitude)
+   (quaternion/from-axis-angle [0 1 0] latitude)))

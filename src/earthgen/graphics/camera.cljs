@@ -1,14 +1,15 @@
 (ns earthgen.graphics.camera
   (:require [thi.ng.geom.vector :as v]
             [thi.ng.geom.matrix :as mat]
-            [earthgen.math.quaternion :as quaternion]))
+            [earthgen.math.quaternion :as quaternion]
+            [earthgen.math.projection :as projection]))
 
 (defn spherical-matrix [a]
   (let
-   [quat (quaternion/product-normal
-          (quaternion/from-axis-angle [0 0 1] (get-in a [:rotation :longitude]))
-          (quaternion/from-axis-angle [0 1 0] (get-in a [:rotation :latitude])))
-    [r1 r2 r3] (quaternion/to-matrix quat)]
+   [[r1 r2 r3] (quaternion/to-matrix
+                (projection/latitude-longitude-rotation
+                 (get-in a [:rotation :latitude])
+                 (get-in a [:rotation :longitude])))]
     (apply mat/->Matrix44
            (concat r1 [0] r2 [0] r3 [0] [0 0 0 1]))))
 
