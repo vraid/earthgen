@@ -1,5 +1,7 @@
 (ns earthgen.grid.core
-  (:require [earthgen.grid.icosahedron :as icosahedron]))
+  (:require [earthgen.grid.icosahedron :as icosahedron]
+            [earthgen.math.vector :as vector]
+            [earthgen.math.trigonometry :as trig]))
 
 (defn get-tile [tiles]
   (partial nth tiles))
@@ -61,6 +63,25 @@
                               (recur n (rest ls) result)))))]
            (recur n (rest ls) result)))))))
 
+(defn tile-area [tile corners]
+  (let
+   [center (:center tile)
+    vertices (mapv :vertex corners)
+    distances (mapv (partial vector/distance center) vertices)
+    last-vec (first vertices)
+    last-dist (first distances)]
+    (loop [area 0.0
+           avec (first vertices)
+           vecs (rest vertices)
+           adist (first distances)
+           dists (rest distances)]
+      (let
+       [[bvec bdist] (if (empty? vecs) [last-vec last-dist] [(first vecs) (first dists)])
+        area (+ area (trig/triangle-area (vector/distance avec bvec) adist bdist))]
+        (if (empty? vecs)
+          area
+          (recur area bvec (rest vecs) bdist (rest dists)))))))
+
 (defn tile-with-corners [corner-vec]
   (let
    [dict (into {}
@@ -68,8 +89,12 @@
                corner-vec)
     tile-corners (fn [ids] (get dict (sort ids)))]
     (fn [{:keys [id tiles] :as a}]
-      (assoc a :corners (mapv tile-corners
-                              (pairwise id tiles))))))
+      (let
+       [corners (mapv tile-corners
+                      (pairwise id tiles))]
+        (assoc a
+               :corners corners
+               :area (tile-area a (mapv (partial nth corner-vec) corners)))))))
 
 (defn corner-with-corners [tile-vec]
   (fn [{:keys [id tiles] :as a}]
