@@ -1,5 +1,8 @@
 (ns earthgen.math.vector)
 
+(defn invalid? [a]
+  (js/isNaN (reduce + 0 a)))
+
 (defn integral [a]
   (mapv Math/round a))
 
