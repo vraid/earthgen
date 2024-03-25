@@ -5,9 +5,9 @@
 
 (defn timed-subdivision [[_ grid]]
   (let
-   [start (.now js/Date)
+   [start (system-time)
     subdivided (grid/subdivide grid)]
-    [(- (.now js/Date) start) subdivided]))
+    [(- (system-time) start) subdivided]))
 
 (defn grids-with-timeout [grids timeout subdivisions]
   (if (not timeout)
