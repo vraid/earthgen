@@ -26,7 +26,7 @@
                     :irregularity irregularity
                     :amplitude amplitude
                     :sea-level sea-level}
-    model (predefined/continents)
+    model (generic/from-input (predefined/continents))
     [_ planet]
     (generation/transform
      used-grids
