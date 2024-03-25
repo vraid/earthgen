@@ -145,7 +145,7 @@
      [:div
       "Subdivisions "
       (input [:subdivisions])]
-     [:div [:sup "[0, 1, 2 ...] Each increment roughly triples the polygon count. Recommended 6-8"]]
+     [:div [:sup "[0, 1, 2 ...] Each increment roughly triples the polygon count"]]
      [:div [:sup (let
                   [parsed (parse-long subdivisions)
                    num (or (and parsed (max 0 parsed)) 0)]
