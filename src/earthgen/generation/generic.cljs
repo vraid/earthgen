@@ -87,7 +87,8 @@
   {"with-seed" (fn [[args]] (generation/with-seed (:seed args)))
    "heightmap" (fn [[args]] (apply terrain/heightmap (map args [:granularity :irregularity :amplitude :seed])))
    "heightmap-let" (fn [[args values formula]] (heightmap-let args values formula))
-   "with-sea-level" (fn [[args]] (terrain/sea-level (:sea-level args)))})
+   "with-sea-level" (fn [[args]] (terrain/sea-level (:sea-level args)))
+   "with-rotation" (fn [[args]] (generation/with-rotation (:rotation args)))})
 
 (defn input-transforms [ls]
   (mapv (fn [a]

@@ -1,5 +1,7 @@
 (ns earthgen.graphics.models
-  (:require [earthgen.grid.core :as grid]))
+  (:require [earthgen.math.quaternion :as quaternion]
+            [earthgen.math.matrix :as matrix]
+            [earthgen.grid.core :as grid]))
 
 (defn make-buffers [size]
   {:vertices (js/Float32Array. (* 3 size))
@@ -53,12 +55,15 @@
 
 (defn solid-tiles [projection color planet]
   (let
-   [corners (:corners planet)]
+   [rotate (matrix/vector-product (quaternion/to-matrix (:rotation planet)))
+    corners (mapv (fn [a]
+                    (update a :vertex rotate))
+                  (:corners planet))]
     (to-model
      (mapv (fn [tile]
              (let
-              [tile-center (:center tile)
-               proj (projection (:center tile))
+              [tile-center (rotate (:center tile))
+               proj (projection tile-center)
                center (proj tile-center)
                faces (grid/pairwise center (mapv (comp proj :vertex (partial nth corners))
                                                  (:corners tile)))

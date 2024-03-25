@@ -1,5 +1,6 @@
 (ns earthgen.generation.operations
-  (:refer-clojure :exclude [min max abs]))
+  (:refer-clojure :exclude [min max abs])
+  (:require [earthgen.generation.core :as generation]))
 
 (defn op [k]
   (fn [& args]
@@ -32,7 +33,8 @@
 (defn terrain [seed sea-level method]
   [["with-seed" (if seed {:seed seed} {})]
    method
-   ["with-sea-level" {:sea-level sea-level}]])
+   ["with-sea-level" {:sea-level sea-level}]
+   ["with-rotation" {:rotation generation/default-rotation}]])
 
 (defn heightmap-let [values final]
   ["heightmap-let" {}
