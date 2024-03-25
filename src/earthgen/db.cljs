@@ -1,5 +1,6 @@
 (ns earthgen.db
   (:require [earthgen.math.random :as random]
+            [earthgen.math.quaternion :as quaternion]
             [earthgen.math.projection :as projection]
             [earthgen.perspective :as perspective]
             [earthgen.graphics.models :as models]
@@ -35,6 +36,7 @@
     {:spherical
      {:name "Spherical"
       :camera camera/spherical
+      :init perspective/init-spherical
       :update perspective/update-spherical
       :projection projection/identity
       :rotation {:latitude 0
@@ -43,6 +45,7 @@
      :hammer
      {:name "Hammer"
       :camera camera/hammer
+      :init perspective/init-hammer
       :update perspective/update-hammer
       :projection projection/hammer
       :scale 3}}
@@ -62,7 +65,9 @@
             :mode :predefined
             :simple-terrain (validation/simple-terrain-str-values simple-terrain)
             :custom ""
-            :current-perspective current-perspective}
+            :current-perspective current-perspective
+            :planet-rotation (:rotation planet)
+            :current-rotation quaternion/identity}
      :time-per-frame 20
      :input {:mouse-down false
              :mouse-event [:none [0 0]]

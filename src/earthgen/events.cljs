@@ -33,9 +33,12 @@
               (:planet db))]))
 
 (defn update-current-perspective [db]
-  (assoc-in db
-            [:graphics :perspective]
-            (get-in db [:perspectives (get-in db [:view :current-perspective])])))
+  (let
+   [perspective (get-in db [:perspectives (get-in db [:view :current-perspective])])]
+    (-> db
+        (assoc-in [:graphics :perspective]
+                  (get-in db [:perspectives (get-in db [:view :current-perspective])]))
+        ((:init perspective) perspective))))
 
 (re-frame/reg-event-db
  ::set-perspective
@@ -62,6 +65,7 @@
           (assoc :model model)
           (assoc-in [:view :subdivisions] (str subdivisions))
           (assoc-in [:view :subdivision-timeout] (if timeout (str timeout) ""))
+          (assoc-in [:view :planet-rotation] (:rotation planet))
           (assoc :planet planet)
           update-models))
     (catch js/Object _ (assoc db :model ""))))

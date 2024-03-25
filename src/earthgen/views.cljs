@@ -7,7 +7,8 @@
             [earthgen.events :as events]
             [earthgen.input :as input]
             [earthgen.graphics.core :as graphics]
-            [earthgen.generation.predefined :as predefined]))
+            [earthgen.generation.predefined :as predefined]
+            [earthgen.math.quaternion :as quaternion]))
 
 (defn canvas-inner []
   (let [mount (fn [canvas]
@@ -184,4 +185,5 @@
                  :read-only true
                  :value (.stringify js/JSON (clj->js model))}]
      [view-section view]
-     [canvas-outer]]))
+     [canvas-outer] 
+     [:div (str "Current rotation [" (clj->js (quaternion/product (quaternion/conjugate (:current-rotation view)) (:planet-rotation view))) "]")]]))
