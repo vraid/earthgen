@@ -10,10 +10,21 @@
   (* a a))
 
 (defn squared-length [a]
-  (reduce + 0 (map (fn [n] (square n)) a)))
+  (transduce (map square) + 0 a))
 
 (defn length [a]
   (Math/sqrt (squared-length a)))
+
+(defn squared-distance [a b]
+  (loop [sum 0.0
+         as a
+         bs b]
+    (if (empty? as)
+      sum
+      (recur (+ sum (square (- (first as) (first bs)))) (rest as) (rest bs)))))
+
+(defn distance [a b]
+  (Math/sqrt (squared-distance a b)))
 
 (defn scale-by [factor a]
   (mapv (partial * factor) a))
