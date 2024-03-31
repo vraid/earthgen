@@ -39,6 +39,11 @@
       (fn [[rng result]]
         (and valid? [rng (assoc result :rotation normal)])))))
 
+(defn with-radius [radius]
+  (fn [_]
+    (fn [[rng result]]
+      [rng (assoc result :radius radius)])))
+
 (defn transform [grids ls]
   (reduce (fn [result f]
             ((f grids) result))
