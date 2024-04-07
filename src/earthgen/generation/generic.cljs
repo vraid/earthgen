@@ -81,7 +81,7 @@
         [rng
          (assoc planet
                 :tile-elevation (vec (take tile-count result))
-                :corner-elevation (vec (take tile-count result)))]))))
+                :corner-elevation (vec (drop tile-count result)))]))))
 
 (def transforms
   {"with-seed" (fn [[args]] (generation/with-seed (:seed args)))
