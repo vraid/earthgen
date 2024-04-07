@@ -1,5 +1,6 @@
 (ns earthgen.graphics.models
-  (:require [earthgen.math.quaternion :as quaternion]
+  (:require [earthgen.interop.array :as js-array]
+            [earthgen.math.quaternion :as quaternion]
             [earthgen.math.matrix :as matrix]
             [earthgen.grid.core :as grid]))
 
@@ -19,12 +20,8 @@
    :num-vertices (* 3 face-count)
    :num-faces face-count})
 
-(defn buffer-insert! [buffer size data offset]
-  (loop [data data
-         offset offset]
-    (when (seq data)
-      (.set buffer (first data) (* size offset))
-      (recur (rest data) (inc offset)))))
+(defn buffer-insert [buffer size data offset]
+  (.set buffer data (* size offset)))
 
 (defn element-insert [vertex-buffer color-buffer n a]
   (loop [n n
@@ -33,8 +30,8 @@
     (if (empty? faces)
       n
       (do
-        (buffer-insert! vertex-buffer 3 (first faces) (* 3 n))
-        (buffer-insert! color-buffer 4 (first colors) (* 3 n))
+        (buffer-insert vertex-buffer 3 (apply js-array/concat (first faces)) (* 3 n))
+        (buffer-insert color-buffer 4 (apply js-array/concat (first colors)) (* 3 n))
         (recur (inc n) (rest faces) (rest colors))))))
 
 (defn to-model [elements]
