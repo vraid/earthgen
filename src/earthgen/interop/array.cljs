@@ -11,7 +11,8 @@
   (areduce a n accum init (f accum (aget a n))))
 
 (defn concat
-  ([a b] (.concat a b)))
+  ([a b] (.concat a b))
+  ([a b c] (.concat a b c)))
 
 (defn count [a]
   (alength a))
