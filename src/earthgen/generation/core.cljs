@@ -71,7 +71,7 @@
         potential-radiation (comp (partial * intensity)
                                   (sunlight/potential-solar-radiation solar-declination)
                                   latitude)]
-        [rng (assoc result :potential-solar-radiation (mapv potential-radiation (:tiles result)))]))))
+        [rng (assoc result :potential-solar-radiation (apply array (map potential-radiation (:tiles result))))]))))
 
 (defn transform [grids ls]
   (reduce (fn [result f]

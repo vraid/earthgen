@@ -1,5 +1,6 @@
 (ns earthgen.generation.terrain
-  (:require [earthgen.math.random :as random]))
+  (:require [earthgen.interop.array :as js-array]
+            [earthgen.math.random :as random]))
 
 (def tile-count (comp count :tiles))
 (def corner-count (comp count :corners))
@@ -15,17 +16,17 @@
 
 (defn midpoint-elevation [planet elevation]
   (let
-   [tile-elevation (partial nth (:tile-elevation planet))]
-    (mapv (fn [{:keys [tiles]} elevation]
-            (let
-             [[a b c] tiles]
-              (+ elevation
-                 (* (/ 1 3)
-                    (+ (tile-elevation a)
-                       (tile-elevation b)
-                       (tile-elevation c))))))
-          (:corners planet)
-          elevation)))
+   [tile-elevation (:tile-elevation planet)]
+    (js-array/map (fn [corner elevation]
+                    (let
+                     [[a b c] (:tiles corner)]
+                      (+ elevation
+                         (* (/ 1 3)
+                            (+ (js-array/get tile-elevation a)
+                               (js-array/get tile-elevation b)
+                               (js-array/get tile-elevation c))))))
+                  (apply array (:corners planet))
+                  elevation)))
 
 (defn corner-elevation [midpoint? elevation]
   (fn [planet]
@@ -52,8 +53,8 @@
         [rng tiles] (random/take (tile-count grid) rng)
         [rng corners] (random/take (corner-count grid) rng)
         initial (-> grid
-                    (with-tile-elevation (mapv (to-elevation amplitude) tiles))
-                    (with-corner-elevation (corner-elevation midpoint? (mapv (to-elevation (* scale amplitude)) corners))))]
+                    (with-tile-elevation (apply array (map (to-elevation amplitude) tiles)))
+                    (with-corner-elevation (corner-elevation midpoint? (apply array (map (to-elevation (* scale amplitude)) corners)))))]
         (loop [rng rng
                scale scale
                grids (rest grids)
@@ -65,8 +66,8 @@
               scale (next-scale irregularity scale)
               [rng nums] (random/take (corner-count grid) rng)
               result (-> grid
-                         (with-tile-elevation (into (:tile-elevation result) (:corner-elevation result)))
-                         (with-corner-elevation (corner-elevation true (mapv (to-elevation (* scale amplitude)) nums))))]
+                         (with-tile-elevation (js-array/concat (:tile-elevation result) (:corner-elevation result)))
+                         (with-corner-elevation (corner-elevation true (apply array (map (to-elevation (* scale amplitude)) nums)))))]
               (recur rng scale (rest grids) result))))))))
 
 (defn sea-level [level]

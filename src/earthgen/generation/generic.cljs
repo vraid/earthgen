@@ -1,15 +1,16 @@
 (ns earthgen.generation.generic
-  (:require [earthgen.math.random :as random]
+  (:require [earthgen.interop.array :as js-array]
+            [earthgen.math.random :as random]
             [earthgen.generation.core :as generation]
             [earthgen.generation.terrain :as terrain]))
 
 (declare from-input)
 
-(defn vector+ [a b] (mapv + a b))
-(defn vector- [a] (mapv - a))
-(defn vector* [a b] (mapv * a b))
-(defn vector-max [a b] (mapv max a b))
-(defn vector-min [a b] (mapv min a b))
+(defn vector+ [a b] (js-array/map (fn [a b] (+ a b)) a b))
+(defn vector- [a] (js-array/map (fn [a] (- a)) a))
+(defn vector* [a b] (js-array/map (fn [a b] (* a b)) a b))
+(defn vector-max [a b] (js-array/map (fn [a b] (max a b)) a b))
+(defn vector-min [a b] (js-array/map (fn [a b] (min a b)) a b))
 
 ; guard against (Math/exp 700) returning infinity
 (defn sigmoid [{:keys [min max scale offset]}]
@@ -29,19 +30,20 @@
   (into {}
         (map (fn [[k f]] [k (wrap-rng f)])
              {"+" (fn [args] (reduce vector+ args))
-              "-" (fn [args] (mapv (if (= 1 (count args)) identity -)
-                                   (reduce vector+ (vector- (first args)) (rest args))))
+              "-" (fn [args] ((if (= 1 (count args)) identity vector-)
+                              (reduce vector+ (vector- (first args)) (rest args))))
               "*" (fn [args] (reduce vector* args))
-              "pow" (fn [[a b]] (mapv Math/pow a b))
-              "abs" (fn [[a]] (mapv Math/abs a))
+              "pow" (fn [[a b]] (js-array/map (fn [a b] (Math/pow a b)) a b))
+              "abs" (fn [[a]] (js-array/map (fn [a] (Math/abs a)) a))
               "max" (fn [args] (reduce vector-max args))
               "min" (fn [args] (reduce vector-min args))
-              "sigmoid" (fn [[args a]] (mapv (sigmoid args) a))})))
+              "sigmoid" (fn [[args a]] (let [f (sigmoid args)]
+                                         (js-array/map (fn [a] (f a)) a)))})))
 
 (defn eval-expr [env n]
   (fn [rng a]
     (cond
-      (number? a) [rng (vec (repeat n a))]
+      (number? a) [rng (apply array (repeat n a))]
       (string? a) [rng (get env a)]
       (map? a) [rng a]
       (seq a) (let
@@ -62,7 +64,7 @@
        [tile-count (count (:tiles planet))
         corner-count (count (:corners planet))
         last-grid (last grids)
-        elevation-vector (fn [a] (into (:tile-elevation a) (:corner-elevation a)))
+        elevation-vector (fn [a] (js-array/concat (:tile-elevation a) (:corner-elevation a)))
         total-count (+ tile-count corner-count)
         env (assoc elevation-env
                    "heightmap"
@@ -80,8 +82,8 @@
         [rng result] ((eval-expr env total-count) rng expr)]
         [rng
          (assoc planet
-                :tile-elevation (vec (take tile-count result))
-                :corner-elevation (vec (drop tile-count result)))]))))
+                :tile-elevation (js-array/take tile-count result)
+                :corner-elevation (js-array/drop tile-count result))]))))
 
 (def transforms
   {"with-seed" (fn [[args]] (generation/with-seed (:seed args)))
