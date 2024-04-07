@@ -1,7 +1,11 @@
 (ns earthgen.generation.core
   (:require [earthgen.math.random :as random]
             [earthgen.grid.core :as grid]
-            [earthgen.math.vector :as vector]))
+            [earthgen.math.vector :as vector]
+            [earthgen.math.spherical :as spherical]
+            [earthgen.astronomy.sunlight :as sunlight]
+            [earthgen.math.matrix :as matrix]
+            [earthgen.math.quaternion :as quaternion]))
 
 (defn timed-subdivision [[_ grid]]
   (let
@@ -43,6 +47,31 @@
   (fn [_]
     (fn [[rng result]]
       [rng (assoc result :radius radius)])))
+
+(defn axial-tilt [tilt]
+  (fn [_]
+    (fn [[rng result]]
+      [rng (assoc result :axial-tilt tilt)])))
+
+(defn orbital-position [position]
+  (fn [_]
+    (fn [[rng result]]
+      [rng (assoc result :orbital-position position)])))
+
+(defn solar-intensity [intensity]
+  (fn [_]
+    (fn [[rng result]]
+      (let
+       [axial-tilt (:axial-tilt result)
+        orbital-position (:orbital-position result)
+        latitude (comp spherical/latitude
+                       (matrix/vector-product (quaternion/to-matrix (:rotation result)))
+                       :center)
+        solar-declination (* axial-tilt (Math/sin orbital-position))
+        potential-radiation (comp (partial * intensity)
+                                  (sunlight/potential-solar-radiation solar-declination)
+                                  latitude)]
+        [rng (assoc result :potential-solar-radiation (mapv potential-radiation (:tiles result)))]))))
 
 (defn transform [grids ls]
   (reduce (fn [result f]
