@@ -1,5 +1,6 @@
 (ns earthgen.generation.core
-  (:require [earthgen.math.random :as random]
+  (:require [earthgen.interop.array :as js-array]
+            [earthgen.math.random :as random]
             [earthgen.grid.core :as grid]
             [earthgen.math.vector :as vector]
             [earthgen.math.spherical :as spherical]
@@ -71,7 +72,7 @@
         potential-radiation (comp (partial * intensity)
                                   (sunlight/potential-solar-radiation solar-declination)
                                   latitude)]
-        [rng (assoc result :potential-solar-radiation (apply array (map potential-radiation (:tiles result))))]))))
+        [rng (assoc result :potential-solar-radiation (js-array/map potential-radiation (:tiles result)))]))))
 
 (defn transform [grids ls]
   (reduce (fn [result f]

@@ -113,15 +113,15 @@
     corner-vec (create-corners tile-vec old-tiles)
     final-tiles (mapv (tile-with-corners corner-vec) tile-vec)
     final-corners (mapv (corner-with-corners final-tiles) corner-vec)]
-    {:tiles final-tiles
-     :corners final-corners}))
+    {:tiles (apply array final-tiles)
+     :corners (apply array final-corners)}))
 
 (defn subdivide [grid]
   (let
-   [tiles (:tiles grid)
+   [tiles (vec (:tiles grid))
     tile-count (count tiles)
     new-tile-id (partial + tile-count)
-    corners (:corners grid)]
+    corners (vec (:corners grid))]
     (grid-from-tiles
      (mapv (fn [a]
              {:id (:id a)

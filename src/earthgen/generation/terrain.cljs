@@ -2,8 +2,8 @@
   (:require [earthgen.interop.array :as js-array]
             [earthgen.math.random :as random]))
 
-(def tile-count (comp count :tiles))
-(def corner-count (comp count :corners))
+(def tile-count (comp js-array/count :tiles))
+(def corner-count (comp js-array/count :corners))
 
 (defn to-elevation [amplitude]
   (fn [a] (* amplitude (- a 0.5))))
@@ -25,7 +25,7 @@
                             (+ (js-array/get tile-elevation a)
                                (js-array/get tile-elevation b)
                                (js-array/get tile-elevation c))))))
-                  (apply array (:corners planet))
+                  (:corners planet)
                   elevation)))
 
 (defn corner-elevation [midpoint? elevation]

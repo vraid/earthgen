@@ -53,20 +53,20 @@
 (defn solid-tiles [projection color planet]
   (let
    [rotate (matrix/vector-product (quaternion/to-matrix (:rotation planet)))
-    corners (mapv (fn [a]
-                    (update a :vertex rotate))
-                  (:corners planet))]
+    corners (js-array/map (fn [a]
+                            (update a :vertex rotate))
+                          (:corners planet))]
     (to-model
-     (mapv (fn [tile]
-             (let
-              [tile-center (rotate (:center tile))
-               proj (projection tile-center)
-               center (proj tile-center)
-               faces (grid/pairwise center (mapv (comp proj :vertex (partial nth corners))
-                                                 (:corners tile)))
-               face-count (count faces)
-               tile-color ((color planet) tile)]
-               {:vertex-count (* 3 face-count)
-                :faces faces
-                :colors (repeat face-count (repeat 3 tile-color))}))
-           (:tiles planet)))))
+     (map (fn [tile]
+            (let
+             [tile-center (rotate (:center tile))
+              proj (projection tile-center)
+              center (proj tile-center)
+              faces (grid/pairwise center (mapv (comp proj :vertex (partial js-array/get corners))
+                                                (:corners tile)))
+              face-count (count faces)
+              tile-color ((color planet) tile)]
+              {:vertex-count (* 3 face-count)
+               :faces faces
+               :colors (repeat face-count (repeat 3 tile-color))}))
+          (vec (:tiles planet))))))
