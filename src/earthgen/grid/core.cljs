@@ -82,6 +82,10 @@
           area
           (recur area bvec (rest vecs) bdist (rest dists)))))))
 
+(defn tile-with-area [corner-vec]
+  (fn [a]
+    (assoc a :area (tile-area a (mapv (partial nth corner-vec) (:corners a))))))
+
 (defn tile-with-corners [corner-vec]
   (let
    [dict (into {}
@@ -92,9 +96,7 @@
       (let
        [corners (mapv tile-corners
                       (pairwise id tiles))]
-        (assoc a
-               :corners corners
-               :area (tile-area a (mapv (partial nth corner-vec) corners)))))))
+        (assoc a :corners corners)))))
 
 (defn corner-with-corners [tile-vec]
   (fn [{:keys [id tiles] :as a}]
@@ -111,7 +113,9 @@
   (let
    [tile-vec (into old-tiles new-tiles)
     corner-vec (create-corners tile-vec old-tiles)
-    final-tiles (mapv (tile-with-corners corner-vec) tile-vec)
+    final-tiles (mapv (comp (tile-with-area corner-vec)
+                            (tile-with-corners corner-vec))
+                      tile-vec)
     final-corners (mapv (corner-with-corners final-tiles) corner-vec)]
     {:tiles (apply array final-tiles)
      :corners (apply array final-corners)}))
