@@ -22,3 +22,13 @@
 
 (defn drop [n arr]
   (.slice arr n (count arr)))
+
+(defn make [count init]
+  (apply array (repeat count init)))
+
+(defn build [count f]
+  (let
+   [arr (make count nil)]
+    (doseq [n (range count)]
+      (aset arr n (f n)))
+    arr))
