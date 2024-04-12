@@ -1,26 +1,29 @@
 (ns earthgen.grid.core
-  (:require [earthgen.grid.icosahedron :as icosahedron]
-            [earthgen.math.vector :as vector]
+  (:require [earthgen.interop.array :as js-array]
+            [earthgen.grid.icosahedron :as icosahedron]
             [earthgen.math.trigonometry :as trig]))
 
 (defn get-tile [tiles]
-  (partial nth tiles))
+  (partial js-array/get tiles))
 
 (defn tile-center [tiles]
   (comp :center (get-tile tiles)))
 
-(defn pairwise [initial ls]
-  (let
-   [last (first ls)]
-    (persistent!
-     (loop [a last
-            ls (rest ls)
-            result (transient [])]
-       (if (empty? ls)
-         (conj! result (if initial [initial a last] [a last]))
-         (let
-          [b (first ls)]
-           (recur b (rest ls) (conj! result (if initial [initial a b] [a b])))))))))
+(defn pairwise-base [f]
+  (fn [initial ls]
+    (let
+     [count (js-array/count ls)
+      nth (fn [n] (js-array/get ls (mod n count)))]
+      (js-array/build count
+                      (fn [n]
+                        (let
+                         [a (nth n)
+                          b (nth (inc n))]
+                          (if initial (f initial a b) (f a b))))))))
+
+(defn to-vec ([a b] [a b]) ([a b c] [a b c]))
+(def pairwise (pairwise-base to-vec))
+(def pairwise-concat (pairwise-base js-array/concat))
 
 (defn square [a] (* a a))
 
@@ -32,14 +35,14 @@
       y (+ y1 y2 y3)
       z (+ z1 z2 z3)
       scale (/ 1 (Math/sqrt (+ (square x) (square y) (square z))))]
-      [(* scale x) (* scale y) (* scale z)])))
+      #js [(* scale x) (* scale y) (* scale z)])))
 
 (defn create-corners [tile-vec old-tiles]
   (let
    [tile-center (tile-center tile-vec)]
     (persistent!
      (loop [n 0
-            ls old-tiles
+            ls (vec old-tiles)
             result (transient [])]
        (if (empty? ls)
          result
@@ -47,7 +50,7 @@
           [{:keys [id center tiles]} (first ls)
            midpoint (midpoint center)
            [n result] (loop [n n
-                             ls (pairwise false tiles)
+                             ls (vec (pairwise false tiles))
                              result result]
                         (if (empty? ls)
                           [n result]
@@ -56,35 +59,41 @@
                             corner (and (< id a)
                                         (< id b)
                                         {:id n
-                                         :tiles [id a b]
+                                         :tiles #js [id a b]
                                          :vertex (midpoint (tile-center a) (tile-center b))})]
                             (if corner
                               (recur (inc n) (rest ls) (conj! result corner))
                               (recur n (rest ls) result)))))]
            (recur n (rest ls) result)))))))
 
+(defn distance [a b]
+  (let
+   [nth (fn [n]
+          (square (- (aget a n) (aget b n))))]
+    (Math/sqrt (+ (nth 0) (nth 1) (nth 2)))))
+
 (defn tile-area [tile corners]
   (let
    [center (:center tile)
-    vertices (mapv :vertex corners)
-    distances (mapv (partial vector/distance center) vertices)
-    last-vec (first vertices)
-    last-dist (first distances)]
-    (loop [area 0.0
-           avec (first vertices)
-           vecs (rest vertices)
-           adist (first distances)
-           dists (rest distances)]
-      (let
-       [[bvec bdist] (if (empty? vecs) [last-vec last-dist] [(first vecs) (first dists)])
-        area (+ area (trig/triangle-area (vector/distance avec bvec) adist bdist))]
-        (if (empty? vecs)
-          area
-          (recur area bvec (rest vecs) bdist (rest dists)))))))
+    count (js-array/count corners)
+    vertices (js-array/map :vertex corners)
+    distances (js-array/map (fn [v] (distance center v)) vertices)
+    vertex (fn [n] (js-array/get vertices (mod n count)))
+    dist (fn [n] (js-array/get distances (mod n count)))]
+    (reduce (fn [area n]
+              (+ area
+                 (trig/triangle-area
+                  (distance (vertex n) (vertex (inc n)))
+                  (dist n)
+                  (dist (inc n)))))
+            0.0
+            (range count))))
 
 (defn tile-with-area [corner-vec]
   (fn [a]
-    (assoc a :area (tile-area a (mapv (partial nth corner-vec) (:corners a))))))
+    (assoc a :area (tile-area a (js-array/map (fn [n]
+                                                (js-array/get corner-vec n))
+                                              (:corners a))))))
 
 (defn tile-with-corners [corner-vec]
   (let
@@ -94,8 +103,8 @@
     tile-corners (fn [ids] (get dict (sort ids)))]
     (fn [{:keys [id tiles] :as a}]
       (let
-       [corners (mapv tile-corners
-                      (pairwise id tiles))]
+       [corners (js-array/map tile-corners
+                              (pairwise id tiles))]
         (assoc a :corners corners)))))
 
 (defn corner-with-corners [tile-vec]
@@ -103,51 +112,53 @@
     (let
      [next-corner (fn [tile]
                     (let
-                     [corners (:corners (nth tile-vec tile))
+                     [corners (:corners (js-array/get tile-vec tile))
                       n (mod (inc (.indexOf corners id))
-                             (count corners))]
-                      (nth corners n)))]
-      (assoc a :corners (mapv next-corner tiles)))))
+                             (js-array/count corners))]
+                      (js-array/get corners n)))]
+      (assoc a :corners (js-array/map next-corner tiles)))))
 
 (defn grid-from-tiles [old-tiles new-tiles]
   (let
-   [tile-vec (into old-tiles new-tiles)
+   [tile-vec (js-array/concat old-tiles new-tiles)
     corner-vec (create-corners tile-vec old-tiles)
-    final-tiles (mapv (comp (tile-with-area corner-vec)
-                            (tile-with-corners corner-vec))
-                      tile-vec)
-    final-corners (mapv (corner-with-corners final-tiles) corner-vec)]
-    {:tiles (apply array final-tiles)
-     :corners (apply array final-corners)}))
+    corner-arr (apply array corner-vec)
+    final-tiles (js-array/map (comp (tile-with-area corner-arr)
+                                    (tile-with-corners corner-vec))
+                              tile-vec)
+    final-corners (js-array/map (corner-with-corners final-tiles) corner-arr)]
+    {:tiles final-tiles
+     :corners final-corners}))
 
 (defn subdivide [grid]
   (let
-   [tiles (vec (:tiles grid))
-    tile-count (count tiles)
+   [tiles (:tiles grid)
+    tile-count (js-array/count tiles)
     new-tile-id (partial + tile-count)
-    corners (vec (:corners grid))]
+    corners (:corners grid)]
     (grid-from-tiles
-     (mapv (fn [a]
-             {:id (:id a)
-              :center (:center a)
-              :tiles (mapv new-tile-id (:corners a))})
-           tiles)
-     (mapv (fn [corner]
-             {:id (new-tile-id (:id corner))
-              :center (:vertex corner)
-              :tiles (let
-                      [[b d f] (:tiles corner)
-                       [a c e] (mapv new-tile-id (:corners corner))]
-                       [a b c d e f])})
-           corners))))
+     (js-array/map (fn [a]
+                     {:id (:id a)
+                      :center (:center a)
+                      :tiles (js-array/map new-tile-id (:corners a))})
+                   tiles)
+     (js-array/map (fn [corner]
+                     {:id (new-tile-id (:id corner))
+                      :center (:vertex corner)
+                      :tiles (let
+                              [[b d f] (:tiles corner)
+                               [a c e] (js-array/map new-tile-id (:corners corner))]
+                               #js [a b c d e f])})
+                   corners))))
 
 (defn initial []
   (grid-from-tiles
-   (mapv (fn [id vertex tiles]
-           {:id id
-            :center vertex
-            :tiles tiles})
-         (range 12)
-         icosahedron/vertices
-         icosahedron/indices)
-   []))
+   (apply array
+          (mapv (fn [id vertex tiles]
+                  {:id id
+                   :center vertex
+                   :tiles (apply array tiles)})
+                (range 12)
+                icosahedron/vertices
+                icosahedron/indices))
+   (array)))

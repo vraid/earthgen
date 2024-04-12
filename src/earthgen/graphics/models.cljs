@@ -23,50 +23,57 @@
 (defn buffer-insert [buffer size data offset]
   (.set buffer data (* size offset)))
 
-(defn element-insert [vertex-buffer color-buffer n a]
-  (loop [n n
-         faces (:faces a)
-         colors (:colors a)]
-    (if (empty? faces)
-      n
-      (do
-        (buffer-insert vertex-buffer 3 (apply js-array/concat (first faces)) (* 3 n))
-        (buffer-insert color-buffer 4 (apply js-array/concat (first colors)) (* 3 n))
-        (recur (inc n) (rest faces) (rest colors))))))
+(defn element-insert [vertex-buffer color-buffer offset a]
+  (let
+   [faces (:faces a)
+    colors (:colors a)
+    count (js-array/count faces)]
+    (doseq [n (range count)]
+      (let
+       [offset (* 3 (+ offset n))]
+        (buffer-insert vertex-buffer 3 (aget faces n) offset)
+        (buffer-insert color-buffer 4 (aget colors n) offset)))
+    (+ offset count)))
 
 (defn to-model [elements]
   (let
-   [vertex-count (reduce + 0 (map :vertex-count elements))
+   [vertex-count (js-array/reduce (fn [sum a]
+                                    (+ sum (:vertex-count a)))
+                                  0
+                                  elements)
     {vertex-buffer :vertices
      color-buffer :colors} (make-buffers vertex-count)
+    count (js-array/count elements)
     insert (partial element-insert vertex-buffer color-buffer)
     _ (.fill vertex-buffer 0)
     _ (.fill color-buffer 0)
     face-count (loop [n 0
-                      elements elements]
-                 (if (empty? elements)
-                   n
-                   (recur (insert n (first elements))
-                          (rest elements))))]
+                      offset 0]
+                 (if (= n count)
+                   offset
+                   (recur (inc n) (insert offset (js-array/get elements n)))))]
     (vertex-data vertex-buffer color-buffer face-count)))
 
 (defn solid-tiles [projection color planet]
   (let
    [rotate (matrix/vector-product (quaternion/to-matrix (:rotation planet)))
-    corners (js-array/map (fn [a]
-                            (update a :vertex rotate))
-                          (:corners planet))]
+    corner-vertices (js-array/map (comp rotate :vertex)
+                                  (:corners planet))
+    to-color (color planet)]
     (to-model
-     (map (fn [tile]
-            (let
-             [tile-center (rotate (:center tile))
-              proj (projection tile-center)
-              center (proj tile-center)
-              faces (grid/pairwise center (mapv (comp proj :vertex (partial js-array/get corners))
-                                                (:corners tile)))
-              face-count (count faces)
-              tile-color ((color planet) tile)]
-              {:vertex-count (* 3 face-count)
-               :faces faces
-               :colors (repeat face-count (repeat 3 tile-color))}))
-          (vec (:tiles planet))))))
+     (js-array/map (fn [tile]
+                     (let
+                      [tile-center (rotate (:center tile))
+                       proj (projection tile-center)
+                       center (proj tile-center)
+                       faces (grid/pairwise-concat
+                              center
+                              (js-array/map (comp proj #(js-array/get corner-vertices %))
+                                            (:corners tile)))
+                       face-count (js-array/count faces)
+                       tile-color (to-color tile)
+                       color-vec (js-array/concat tile-color tile-color tile-color)]
+                       {:vertex-count (* 3 face-count)
+                        :faces faces
+                        :colors (js-array/make face-count color-vec)}))
+                   (:tiles planet)))))
