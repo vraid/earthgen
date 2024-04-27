@@ -1,5 +1,5 @@
 (ns earthgen.interop.array
-  (:refer-clojure :exclude [get map reduce concat count take drop]))
+  (:refer-clojure :exclude [get map reduce concat count first last take drop]))
 
 (def get aget)
 
@@ -16,6 +16,12 @@
 
 (defn count [a]
   (alength a))
+
+(defn first [a]
+  (get a 0))
+
+(defn last [a]
+  (get a (dec (count a))))
 
 (defn take [n arr]
   (.slice arr 0 n))
