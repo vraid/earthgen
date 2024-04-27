@@ -54,26 +54,33 @@
                    (recur (inc n) (insert offset (js-array/get elements n)))))]
     (vertex-data vertex-buffer color-buffer face-count)))
 
-(defn solid-tiles [projection color planet]
-  (let
-   [rotate (matrix/vector-product (quaternion/to-matrix (:rotation planet)))
-    corner-vertices (js-array/map (comp rotate :vertex)
-                                  (:corners planet))
-    to-color (color planet)]
-    (to-model
-     (js-array/map (fn [tile]
-                     (let
-                      [tile-center (rotate (:center tile))
-                       proj (projection tile-center)
-                       center (proj tile-center)
-                       faces (grid/pairwise-concat
-                              center
-                              (js-array/map (comp proj #(js-array/get corner-vertices %))
-                                            (:corners tile)))
-                       face-count (js-array/count faces)
-                       tile-color (to-color tile)
-                       color-vec (js-array/concat tile-color tile-color tile-color)]
-                       {:vertex-count (* 3 face-count)
-                        :faces faces
-                        :colors (js-array/make face-count color-vec)}))
-                   (:tiles planet)))))
+(defn tiles-base [f]
+  (fn [projection color planet]
+    (let
+     [rotate (matrix/vector-product (quaternion/to-matrix (:rotation planet)))
+      corner-vertices (js-array/map (comp rotate :vertex)
+                                    (:corners planet))
+      [bands colors tile-color corner-color] (color planet)]
+      (to-model
+       (js-array/map (fn [tile]
+                       (let
+                        [tile-center (rotate (:center tile))
+                         proj (projection tile-center)
+                         center (proj tile-center)
+                         faces (grid/pairwise-concat
+                                center
+                                (js-array/map (comp proj #(js-array/get corner-vertices %))
+                                              (:corners tile)))]
+                         (f bands colors tile-color corner-color tile faces)))
+                     (:tiles planet))))))
+
+(def solid-tiles
+  (tiles-base (fn [_ colors tile-color _ tile faces]
+                (let
+                 [face-count (js-array/count faces)
+                  [n _] (tile-color tile)
+                  color (js-array/get colors n)
+                  color-vec (js-array/concat color color color)]
+                  {:vertex-count (* 3 face-count)
+                   :faces faces
+                   :colors (js-array/make face-count color-vec)}))))
