@@ -105,7 +105,7 @@
       (let
        [corners (js-array/map tile-corners
                               (pairwise id tiles))]
-        (assoc a :corners corners)))))
+        (assoc a :corners (js-array/shift 1 corners))))))
 
 (defn corner-with-corners [tile-vec]
   (fn [{:keys [id tiles] :as a}]
