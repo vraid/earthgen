@@ -15,8 +15,9 @@
 (def default-db
   (let
    [grids (iterate generation/timed-subdivision [0 (grid/initial)])
-    timeout 1000
-    [subdivisions used-grids] (generation/grids-with-timeout grids timeout 20)
+    startup-timeout 200
+    loaded-timeout 2000
+    [subdivisions used-grids] (generation/grids-with-timeout grids startup-timeout 20)
     seed (random/random-seed 12)
     granularity 2
     irregularity 0.4
@@ -61,7 +62,7 @@
      :perspectives perspectives
      :model model
      :view {:subdivisions (str subdivisions)
-            :subdivision-timeout (str timeout)
+            :subdivision-timeout (str loaded-timeout)
             :mode :predefined
             :simple-terrain (validation/simple-terrain-str-values simple-terrain)
             :custom ""
