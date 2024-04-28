@@ -29,6 +29,13 @@
 (defn drop [n arr]
   (.slice arr n (count arr)))
 
+(defn shift [n arr]
+  (let
+   [k (count arr)
+    m (- k (mod n k))]
+    (concat (.slice arr m k)
+            (.slice arr 0 m))))
+
 (defn make [count init]
   (apply array (repeat count init)))
 
