@@ -27,7 +27,7 @@
 (defn update-models [db]
   (assoc-in db
             [:graphics :models]
-            [(models/solid-tiles
+            [(models/contoured-tiles
               (get-in db [:graphics :perspective :projection])
               map-modes/elevation
               (:planet db))]))

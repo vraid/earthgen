@@ -23,7 +23,6 @@
 
 (defn to-vec ([a b] [a b]) ([a b c] [a b c]))
 (def pairwise (pairwise-base to-vec))
-(def pairwise-concat (pairwise-base js-array/concat))
 
 (defn square [a] (* a a))
 

@@ -60,27 +60,82 @@
      [rotate (matrix/vector-product (quaternion/to-matrix (:rotation planet)))
       corner-vertices (js-array/map (comp rotate :vertex)
                                     (:corners planet))
-      [bands colors tile-color corner-color] (color planet)]
+      [colors tile-color] (color planet)
+      tile-colors (js-array/map (comp tile-color :id) (:tiles planet))]
       (to-model
        (js-array/map (fn [tile]
                        (let
                         [tile-center (rotate (:center tile))
                          proj (projection tile-center)
                          center (proj tile-center)
-                         faces (grid/pairwise-concat
+                         vertices (js-array/map (comp proj #(js-array/get corner-vertices %)) (:corners tile))
+                         faces (grid/pairwise
                                 center
-                                (js-array/map (comp proj #(js-array/get corner-vertices %))
-                                              (:corners tile)))]
-                         (f bands colors tile-color corner-color tile faces)))
+                                vertices)]
+                         (f colors tile-colors tile faces)))
                      (:tiles planet))))))
 
-(def solid-tiles
-  (tiles-base (fn [_ colors tile-color _ tile faces]
+(def contoured-tiles
+  (tiles-base (fn [colors tile-colors tile faces]
                 (let
                  [face-count (js-array/count faces)
-                  [n _] (tile-color tile)
-                  color (js-array/get colors n)
-                  color-vec (js-array/concat color color color)]
-                  {:vertex-count (* 3 face-count)
-                   :faces faces
-                   :colors (js-array/make face-count color-vec)}))))
+                  band (js-array/get tile-colors (:id tile))
+                  contour? (js-array/map (fn [n] (not (= band (js-array/get tile-colors n))))
+                                         (:tiles tile))
+                  towards (fn [k u v]
+                            (js-array/map (fn [a b]
+                                            (+ (* k a) (* (- 1.0 k) b)))
+                                          u v))
+                  color (js-array/get colors band)
+                  color-vec (js-array/concat color color color)
+                  black #js [0 0 0 1]
+                  black-vec (js-array/concat black black black)
+                  corner (fn [vertices]
+                           {:vertex-count 3
+                            :vertices vertices
+                            :colors black-vec})
+                  pieces (js-array/reduce
+                          js-array/concat
+                          #js []
+                          (js-array/build
+                           face-count
+                           (fn [n]
+                             (let
+                              [[c a b] (js-array/get faces n)
+                               face (js-array/concat c a b)
+                               [lc contour? rc] (js-array/map (fn [k]
+                                                                (js-array/get contour? (mod (+ k n) face-count)))
+                                                              #js [-1 0 1])]
+                               (if contour?
+                                 #js [{:vertex-count 6
+                                       :vertices (js-array/concat
+                                                  (js-array/concat
+                                                   c
+                                                   (towards 0.1 c a)
+                                                   (towards 0.1 c b))
+                                                  face)
+                                       :colors (js-array/concat color-vec black-vec)}]
+                                 (let
+                                  [lcorner (if lc
+                                             #js [(corner
+                                                   (js-array/concat
+                                                    a
+                                                    (towards 0.075 b a)
+                                                    (towards 0.1 c a)))]
+                                             #js [])
+                                   rcorner (if rc
+                                             #js [(corner
+                                                   (js-array/concat
+                                                    b
+                                                    (towards 0.1 c b)
+                                                    (towards 0.075 a b)))]
+                                             #js [])]
+                                   (js-array/concat
+                                    #js [{:vertex-count 3
+                                          :vertices face
+                                          :colors color-vec}]
+                                    lcorner
+                                    rcorner)))))))]
+                  {:vertex-count (js-array/reduce + 0 (js-array/map :vertex-count pieces))
+                   :faces (js-array/map :vertices pieces)
+                   :colors (js-array/map :colors pieces)}))))

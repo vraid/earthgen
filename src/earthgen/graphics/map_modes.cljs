@@ -8,10 +8,7 @@
       (loop [n 0]
         (if (or (= n stop-at)
                 (<= a (js-array/get bands (inc n))))
-          (let
-           [low (js-array/get bands n)
-            high (js-array/get bands (inc n))]
-            [n (/ (- a low) (- high low))])
+          n
           (recur (inc n)))))))
 
 (defn elevation [planet]
@@ -28,25 +25,16 @@
                      [0.8 0.5 0.15 1]
                      [0.4 0.25 0 1]])
     [min-value max-value] [(js-array/first bands) (js-array/last bands)]
-    tile-elevation (:tile-elevation planet)
-    corner-elevation (:corner-elevation planet)
     sea-level (:sea-level planet)
     to-value (fn [a]
                (- a sea-level))
-    tile-value #(->> %
-                     :id
-                     (js-array/get tile-elevation)
-                     to-value)
-    corner-value #(->> %
-                       :id
-                       (js-array/get corner-elevation)
-                       to-value)
+    elevation-in (fn [vec]
+                   #(->> %
+                         (js-array/get vec)
+                         to-value))
     get-band (in-bands bands)
     color #(->> %
                 (max min-value)
                 (min max-value)
                 get-band)]
-    [bands
-     colors
-     (comp color tile-value)
-     (comp color corner-value)]))
+    [colors (comp color (elevation-in (:tile-elevation planet)))]))

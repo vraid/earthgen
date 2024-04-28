@@ -53,7 +53,7 @@
     {:grids grids
      :planet planet
      :graphics {:shader nil
-                :models [(models/solid-tiles
+                :models [(models/contoured-tiles
                           (get-in perspectives [current-perspective :projection])
                           map-modes/elevation
                           planet)]
