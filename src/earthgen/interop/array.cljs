@@ -4,11 +4,11 @@
 (def get aget)
 
 (defn map
-  ([f a] (amap a n _ (f (aget a n))))
-  ([f a b] (amap a n _ (f (aget a n) (aget b n)))))
+  ([f a] (amap a n _ (f (get a n))))
+  ([f a b] (amap a n _ (f (get a n) (get b n)))))
 
 (defn reduce [f init a]
-  (areduce a n accum init (f accum (aget a n))))
+  (areduce a n accum init (f accum (get a n))))
 
 (defn concat
   ([a b] (.concat a b))
@@ -28,13 +28,6 @@
 
 (defn drop [n arr]
   (.slice arr n (count arr)))
-
-(defn shift [n arr]
-  (let
-   [k (count arr)
-    m (- k (mod n k))]
-    (concat (.slice arr m k)
-            (.slice arr 0 m))))
 
 (defn make [count init]
   (apply array (repeat count init)))
