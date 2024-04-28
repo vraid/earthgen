@@ -45,7 +45,7 @@
                    ["smooth" (ops/sigmoid-at [0 1] [0.2 -200] [0.8 200] "ocean")]
                    ["landform" (ops/op+ (ops/op* "smooth" "continents")
                                         (ops/op* (ops/op- 1 "smooth") (ops/min "continents" "ocean")))]
-                   
+
                    ["sea-level-adjusted" (ops/op- "landform" glacial-sea-level)]
                    ["flatten" (ops/op* (ops/op- "landform" sea-level)
                                        (ops/sigmoid-at [0 0.75] [0.2 sea-level] [0.8 (+ sea-level 200)] "landform"))]
@@ -70,16 +70,16 @@
 
 (defn archipelago []
   (let
-   [amplitude 1500
-    sea-level 1200]
+   [amplitude 1000
+    sea-level 800]
     (ops/terrain nil
                  sea-level
                  (ops/heightmap-let
                   [["landform" (ops/heightmap {:granularity 0 :irregularity 0.25 :amplitude amplitude})]
-                   ["deep?" (ops/sigmoid-at [0 4] [0.1 (- sea-level 1000)] [0.8 (- sea-level 1500)] "landform")]
-                   ["extra-depth" (ops/op* "deep?" (ops/op- (ops/abs "landform")))]
-                   ["shallow?" (ops/sigmoid-at [0 1] [0.1 (- sea-level 1200)] [0.8 (- sea-level 1000)] "landform")]
+                   ["deep?" (ops/sigmoid-at [0 4] [0.1 (- sea-level 670)] [0.8 (- sea-level 1000)] "landform")]
+                   ["extra-depth" (ops/op* "deep?" (ops/op* 2.0 (ops/op- (ops/abs "landform"))))]
+                   ["shallow?" (ops/sigmoid-at [0 1] [0.1 (- sea-level 800)] [0.8 (- sea-level 670)] "landform")]
                    ["islands" (ops/abs (ops/heightmap {:granularity 2 :irregularity 0.15 :amplitude 1}))]
                    ["islands?" (ops/sigmoid-at [0 1] [0.8 0.02] [0.1 0.08] "islands")]
-                   ["island-elevation" (ops/abs (ops/heightmap {:granularity 5 :irregularity 0.3 :amplitude 5000}))]]
+                   ["island-elevation" (ops/abs (ops/heightmap {:granularity 5 :irregularity 0.3 :amplitude 3000}))]]
                   (ops/op+ "landform" "extra-depth" (ops/op* "shallow?" "islands?" "island-elevation"))))))
