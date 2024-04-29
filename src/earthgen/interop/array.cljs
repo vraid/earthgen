@@ -1,11 +1,14 @@
 (ns earthgen.interop.array
-  (:refer-clojure :exclude [get map reduce concat count first last take drop]))
+  (:refer-clojure :exclude [get map map-indexed reduce concat count first last take drop]))
 
 (def get aget)
 
 (defn map
   ([f a] (amap a n _ (f (get a n))))
   ([f a b] (amap a n _ (f (get a n) (get b n)))))
+
+(defn map-indexed [f a]
+  (amap a n _ (f n (get a n))))
 
 (defn reduce [f init a]
   (areduce a n accum init (f accum (get a n))))
