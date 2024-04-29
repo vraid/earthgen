@@ -5,10 +5,13 @@
 
 (defn map
   ([f a] (amap a n _ (f (get a n))))
-  ([f a b] (amap a n _ (f (get a n) (get b n)))))
+  ([f a b] (amap a n _ (f (get a n) (get b n))))
+  ([f a b c] (amap a n _ (f (get a n) (get b n) (get c n)))))
 
-(defn map-indexed [f a]
-  (amap a n _ (f n (get a n))))
+(defn map-indexed
+  ([f a] (amap a n _ (f n (get a n))))
+  ([f a b] (amap a n _ (f n (get a n) (get b n))))
+  ([f a b c] (amap a n _ (f n (get a n) (get b n) (get c n)))))
 
 (defn reduce [f init a]
   (areduce a n accum init (f accum (get a n))))
@@ -33,7 +36,7 @@
   (.slice arr n (count arr)))
 
 (defn make [count init]
-  (apply array (repeat count init)))
+  (.fill (array count) init))
 
 (defn build [count f]
   (let
