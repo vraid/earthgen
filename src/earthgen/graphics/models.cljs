@@ -61,25 +61,26 @@
       corner-vertices (js-array/map (comp rotate :vertex)
                                     (:corners planet))
       [colors tile-color] (color planet)
-      tile-colors (js-array/map (comp tile-color :id) (:tiles planet))]
+      tile-colors (js-array/map-indexed (fn [n _] (tile-color n)) (:tiles planet))]
       (to-model
-       (js-array/map (fn [tile]
-                       (let
-                        [tile-center (rotate (:center tile))
-                         proj (projection tile-center)
-                         center (proj tile-center)
-                         vertices (js-array/map (comp proj #(js-array/get corner-vertices %)) (:corners tile))
-                         faces (grid/pairwise
-                                center
-                                vertices)]
-                         (f colors tile-colors tile faces)))
-                     (:tiles planet))))))
+       (js-array/map-indexed
+        (fn [tile-id tile]
+          (let
+           [tile-center (rotate (:center tile))
+            proj (projection tile-center)
+            center (proj tile-center)
+            vertices (js-array/map (comp proj #(js-array/get corner-vertices %)) (:corners tile))
+            faces (grid/pairwise
+                   center
+                   vertices)]
+            (f colors tile-colors tile-id tile faces)))
+        (:tiles planet))))))
 
 (def contoured-tiles
-  (tiles-base (fn [colors tile-colors tile faces]
+  (tiles-base (fn [colors tile-colors tile-id tile faces]
                 (let
                  [face-count (js-array/count faces)
-                  band (js-array/get tile-colors (:id tile))
+                  band (js-array/get tile-colors tile-id)
                   contour? (js-array/map (fn [n] (not (= band (js-array/get tile-colors n))))
                                          (:tiles tile))
                   towards (fn [k u v]

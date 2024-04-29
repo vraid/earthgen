@@ -34,32 +34,34 @@
 
 (defn create-edges [tile-vec corner-vertices]
   (let
-   [arr (js-array/make (* 3 (- (js-array/count tile-vec) 2)) nil)]
+   [tile-count (js-array/count tile-vec)
+    arr (js-array/make (* 3 (- tile-count 2)) nil)]
     (loop [n 0
-           ls (seq tile-vec)]
-      (if (empty? ls)
+           id 0]
+      (if (= id tile-count)
         arr
         (let
-         [{:keys [id tiles corners] :as tile} (first ls)
-          n (loop [n n
+         [tile (js-array/get tile-vec id)
+          {tiles :tiles
+           corners :corners} tile
+          n (loop [edge-id n
                    ks (range (js-array/count tiles))]
               (if (empty? ks)
-                n
+                edge-id
                 (let
                  [k (first ks)
                   adj (js-array/get tiles k)]
                   (if (< id adj)
                     (let
-                     [edge-id n
-                      corner-vertex (fn [n] (js-array/get corner-vertices (js-array/get corners n)))
+                     [corner-vertex (fn [n] (js-array/get corner-vertices (js-array/get corners n)))
                       edge {:length (distance (corner-vertex k) (corner-vertex (mod (inc k) (js-array/count corners))))}
                       t (js-array/get tile-vec adj)]
                       (aset (:edges tile) k edge-id)
                       (aset (:edges t) (.indexOf (:tiles t) id) edge-id)
-                      (aset arr n edge)
-                      (recur (inc n) (rest ks)))
-                    (recur n (rest ks))))))]
-          (recur n (rest ls)))))))
+                      (aset arr edge-id edge)
+                      (recur (inc edge-id) (rest ks)))
+                    (recur edge-id (rest ks))))))]
+          (recur n (inc id)))))))
 
 (defn midpoint [[x1 y1 z1]]
   (fn [[x2 y2 z2]
@@ -73,26 +75,27 @@
 
 (defn create-corners [tile-vec old-tiles]
   (let
-   [arr (js-array/make (* 2 (- (js-array/count tile-vec) 2)) nil)
+   [old-tile-count (js-array/count old-tiles)
+    arr (js-array/make (* 2 (- (js-array/count tile-vec) 2)) nil)
     tile-center (tile-center tile-vec)]
     (loop [n 0
-           ls (seq old-tiles)]
-      (if (empty? ls)
+           id 0]
+      (if (= id old-tile-count)
         arr
         (let
-         [{:keys [id center tiles]} (first ls)
+         [tile (js-array/get old-tiles id)
+          {center :center
+           tiles :tiles} tile
           midpoint (midpoint center)
-          n (loop [n n
+          n (loop [corner-id n
                    ls (seq (pairwise false tiles))]
               (if (empty? ls)
-                n
+                corner-id
                 (let
                  [[a b] (first ls)]
                   (if (and (< id a) (< id b))
                     (let
-                     [corner-id n
-                      corner {:id n
-                              :tiles #js [id a b]
+                     [corner {:tiles #js [id a b]
                               :vertex (midpoint (tile-center a) (tile-center b))}
                       set-in (fn [n adj]
                                (let
@@ -101,10 +104,10 @@
                       (set-in id b)
                       (set-in a id)
                       (set-in b a)
-                      (aset arr n corner)
-                      (recur (inc n) (rest ls)))
-                    (recur n (rest ls))))))]
-          (recur n (rest ls)))))))
+                      (aset arr corner-id corner)
+                      (recur (inc corner-id) (rest ls)))
+                    (recur corner-id (rest ls))))))]
+          (recur n (inc id)))))))
 
 (defn tile-area [corner-vertices edge-lengths]
   (fn [{:keys [center corners edges]}]
@@ -126,7 +129,7 @@
     (assoc a :area (area a))))
 
 (defn corner-with-corners [tile-vec]
-  (fn [{:keys [id tiles] :as a}]
+  (fn [id {:keys [tiles] :as a}]
     (let
      [next-corner (fn [tile]
                     (let
@@ -145,8 +148,8 @@
     edge-lengths (js-array/map :length edges)
     final-tiles (js-array/map (tile-with-area (tile-area corner-vertices edge-lengths))
                               tiles)
-    final-corners (js-array/map (corner-with-corners final-tiles)
-                                corners)]
+    final-corners (js-array/map-indexed (corner-with-corners final-tiles)
+                                        corners)]
     {:tiles final-tiles
      :corners final-corners
      :edges edges}))
@@ -162,15 +165,13 @@
                      (let
                       [corners (:corners a)
                        corner-count (js-array/count corners)]
-                       {:id (:id a)
-                        :center (:center a)
+                       {:center (:center a)
                         :tiles (js-array/map new-tile-id corners)
                         :corners (js-array/make corner-count -1)
                         :edges (js-array/make corner-count -1)}))
                    tiles)
      (js-array/map (fn [corner]
-                     {:id (new-tile-id (:id corner))
-                      :center (:vertex corner)
+                     {:center (:vertex corner)
                       :tiles (let
                               [[b d f] (:tiles corner)
                                [a c e] (js-array/map new-tile-id (:corners corner))]
@@ -182,13 +183,11 @@
 (defn initial []
   (grid-from-tiles
    (apply array
-          (mapv (fn [id vertex tiles]
-                  {:id id
-                   :center vertex
+          (mapv (fn [vertex tiles]
+                  {:center vertex
                    :tiles (apply array tiles)
                    :corners (js-array/make 5 -1)
                    :edges (js-array/make 5 -1)})
-                (range 12)
                 icosahedron/vertices
                 icosahedron/indices))
    (array)))
