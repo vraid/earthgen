@@ -58,31 +58,32 @@
   (fn [projection color planet]
     (let
      [rotate (matrix/vector-product (quaternion/to-matrix (:rotation planet)))
-      corner-vertices (js-array/map (comp rotate :vertex)
-                                    (:corners planet))
+      corner-vertices (js-array/map rotate (:corner-vertices planet))
       [colors tile-color] (color planet)
-      tile-colors (js-array/map-indexed (fn [n _] (tile-color n)) (:tiles planet))]
+      tile-colors (js-array/map-indexed (fn [n _] (tile-color n)) (:tile-vertices planet))]
       (to-model
        (js-array/map-indexed
-        (fn [tile-id tile]
+        (fn [tile-id tile-vertex tile-tiles tile-corners]
           (let
-           [tile-center (rotate (:center tile))
+           [tile-center (rotate tile-vertex)
             proj (projection tile-center)
             center (proj tile-center)
-            vertices (js-array/map (comp proj #(js-array/get corner-vertices %)) (:corners tile))
+            vertices (js-array/map (comp proj #(js-array/get corner-vertices %)) tile-corners)
             faces (grid/pairwise
                    center
                    vertices)]
-            (f colors tile-colors tile-id tile faces)))
-        (:tiles planet))))))
+            (f colors tile-colors tile-id tile-tiles faces)))
+        (:tile-vertices planet)
+        (:tile-tiles planet)
+        (:tile-corners planet))))))
 
 (def contoured-tiles
-  (tiles-base (fn [colors tile-colors tile-id tile faces]
+  (tiles-base (fn [colors tile-colors tile-id tile-tiles faces]
                 (let
                  [face-count (js-array/count faces)
                   band (js-array/get tile-colors tile-id)
                   contour? (js-array/map (fn [n] (not (= band (js-array/get tile-colors n))))
-                                         (:tiles tile))
+                                         tile-tiles)
                   towards (fn [k u v]
                             (js-array/map (fn [a b]
                                             (+ (* k a) (* (- 1.0 k) b)))

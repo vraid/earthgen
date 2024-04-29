@@ -66,13 +66,12 @@
        [axial-tilt (:axial-tilt result)
         orbital-position (:orbital-position result)
         latitude (comp spherical/latitude
-                       (matrix/vector-product (quaternion/to-matrix (:rotation result)))
-                       :center)
+                       (matrix/vector-product (quaternion/to-matrix (:rotation result))))
         solar-declination (* axial-tilt (Math/sin orbital-position))
         potential-radiation (comp (partial * intensity)
                                   (sunlight/potential-solar-radiation solar-declination)
                                   latitude)]
-        [rng (assoc result :potential-solar-radiation (js-array/map potential-radiation (:tiles result)))]))))
+        [rng (assoc result :potential-solar-radiation (js-array/map potential-radiation (:tile-vertices result)))]))))
 
 (defn transform [grids ls]
   (reduce (fn [result f]

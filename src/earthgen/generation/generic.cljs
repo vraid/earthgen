@@ -61,8 +61,8 @@
   (fn [grids]
     (fn [[rng planet]]
       (let
-       [tile-count (js-array/count (:tiles planet))
-        corner-count (js-array/count (:corners planet))
+       [tile-count (js-array/count (:tile-vertices planet))
+        corner-count (js-array/count (:corner-vertices planet))
         last-grid (last grids)
         elevation-vector (fn [a] (js-array/concat (:tile-elevation a) (:corner-elevation a)))
         total-count (+ tile-count corner-count)
