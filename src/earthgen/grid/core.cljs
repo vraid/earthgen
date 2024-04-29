@@ -38,41 +38,38 @@
 
 (defn create-corners [tile-vec old-tiles]
   (let
-   [tile-center (tile-center tile-vec)]
-    (persistent!
-     (loop [n 0
-            ls (vec old-tiles)
-            result (transient [])]
-       (if (empty? ls)
-         result
-         (let
-          [{:keys [id center tiles]} (first ls)
-           midpoint (midpoint center)
-           [n result] (loop [n n
-                             ls (vec (pairwise false tiles))
-                             result result]
-                        (if (empty? ls)
-                          [n result]
-                          (let
-                           [[a b] (first ls)
-                            corner (and (< id a)
-                                        (< id b)
-                                        {:id n
-                                         :tiles #js [id a b]
-                                         :vertex (midpoint (tile-center a) (tile-center b))})]
-                            (if corner
-                              (let
-                               [corner-id (:id corner)
-                                set-in (fn [n adj]
-                                         (let
-                                          [t (js-array/get tile-vec n)]
-                                           (aset (:corners t) (.indexOf (:tiles t) adj) corner-id)))]
-                                (set-in id b)
-                                (set-in a id)
-                                (set-in b a)
-                                (recur (inc n) (rest ls) (conj! result corner)))
-                              (recur n (rest ls) result)))))]
-           (recur n (rest ls) result)))))))
+   [arr (js-array/make (* 2 (- (js-array/count tile-vec) 2)) nil)
+    tile-center (tile-center tile-vec)]
+    (loop [n 0
+           ls (seq old-tiles)]
+      (if (empty? ls)
+        arr
+        (let
+         [{:keys [id center tiles]} (first ls)
+          midpoint (midpoint center)
+          n (loop [n n
+                   ls (seq (pairwise false tiles))]
+              (if (empty? ls)
+                n
+                (let
+                 [[a b] (first ls)]
+                  (if (and (< id a) (< id b))
+                    (let
+                     [corner-id n
+                      corner {:id n
+                              :tiles #js [id a b]
+                              :vertex (midpoint (tile-center a) (tile-center b))}
+                      set-in (fn [n adj]
+                               (let
+                                [t (js-array/get tile-vec n)]
+                                 (aset (:corners t) (.indexOf (:tiles t) adj) corner-id)))]
+                      (set-in id b)
+                      (set-in a id)
+                      (set-in b a)
+                      (aset arr n corner)
+                      (recur (inc n) (rest ls)))
+                    (recur n (rest ls))))))]
+          (recur n (rest ls)))))))
 
 (defn distance [a b]
   (let
@@ -118,10 +115,9 @@
   (let
    [tile-vec (js-array/concat old-tiles new-tiles)
     corner-vec (create-corners tile-vec old-tiles)
-    corner-arr (apply array corner-vec)
-    final-tiles (js-array/map (tile-with-area corner-arr)
+    final-tiles (js-array/map (tile-with-area corner-vec)
                               tile-vec)
-    final-corners (js-array/map (corner-with-corners final-tiles) corner-arr)]
+    final-corners (js-array/map (corner-with-corners final-tiles) corner-vec)]
     {:tiles final-tiles
      :corners final-corners}))
 
