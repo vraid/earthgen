@@ -68,7 +68,7 @@
            [tile-center (rotate tile-vertex)
             proj (projection tile-center)
             center (proj tile-center)
-            vertices (js-array/map (comp proj #(js-array/get corner-vertices %)) tile-corners)
+            vertices (js-array/map (comp proj (js-array/access corner-vertices)) tile-corners)
             faces (grid/pairwise
                    center
                    vertices)]

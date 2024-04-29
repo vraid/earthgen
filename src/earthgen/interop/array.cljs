@@ -3,6 +3,10 @@
 
 (def get aget)
 
+(defn access [arr]
+  (fn [n]
+    (get arr n)))
+
 (defn map
   ([f a] (amap a n _ (f (get a n))))
   ([f a b] (amap a n _ (f (get a n) (get b n))))

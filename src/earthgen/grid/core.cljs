@@ -29,13 +29,15 @@
   (let
    [tile-count (js-array/count tile-tiles)
     edge-lengths (js-array/make (* 3 (- tile-count 2)) nil)
-    tile-edges (js-array/build tile-count (fn [n] (js-array/make (if (< n 12) 5 6) -1)))]
+    tile-edges (js-array/build tile-count (fn [n] (js-array/make (if (< n 12) 5 6) -1)))
+    get-tile-tiles (js-array/access tile-tiles)
+    get-tile-edges (js-array/access tile-edges)]
     (loop [n 0
            id 0]
       (if (= id tile-count)
         [tile-edges edge-lengths]
         (let
-         [tiles (js-array/get tile-tiles id)
+         [tiles (get-tile-tiles id)
           corners (js-array/get tile-corners id)
           n (loop [edge-id n
                    ks (range (js-array/count tiles))]
@@ -48,8 +50,8 @@
                     (let
                      [corner-vertex (fn [n] (js-array/get corner-vertices (js-array/get corners n)))
                       length (distance (corner-vertex k) (corner-vertex (mod (inc k) (js-array/count corners))))]
-                      (aset (js-array/get tile-edges id) k edge-id)
-                      (aset (js-array/get tile-edges adj) (.indexOf (js-array/get tile-tiles adj) id) edge-id)
+                      (aset (get-tile-edges id) k edge-id)
+                      (aset (get-tile-edges adj) (.indexOf (get-tile-tiles adj) id) edge-id)
                       (aset edge-lengths edge-id length)
                       (recur (inc edge-id) (rest ks)))
                     (recur edge-id (rest ks))))))]
@@ -67,17 +69,18 @@
 
 (defn create-corners [tile-vertices tile-tiles old-tile-count]
   (let
-   [tile-vertex (fn [n] (js-array/get tile-vertices n))
+   [tile-vertex (js-array/access tile-vertices)
     tile-corners (js-array/build (js-array/count tile-vertices) (fn [n] (js-array/make (if (< n 12) 5 6) -1)))
     corner-count (* 2 (- (js-array/count tile-vertices) 2))
     corner-tiles (js-array/make corner-count nil)
-    corner-vertices (js-array/make corner-count nil)]
+    corner-vertices (js-array/make corner-count nil)
+    get-tile-tiles (js-array/access tile-tiles)]
     (loop [n 0
            id 0]
       (if (= id old-tile-count)
         [tile-corners corner-tiles corner-vertices]
         (let
-         [tiles (js-array/get tile-tiles id)
+         [tiles (get-tile-tiles id)
           midpoint (midpoint (tile-vertex id))
           n (loop [corner-id n
                    ls (seq (pairwise false tiles))]
@@ -89,7 +92,7 @@
                     (let
                      [set-in (fn [n adj]
                                (aset (js-array/get tile-corners n)
-                                     (.indexOf (js-array/get tile-tiles n) adj)
+                                     (.indexOf (get-tile-tiles n) adj)
                                      corner-id))]
                       (set-in id b)
                       (set-in a id)
