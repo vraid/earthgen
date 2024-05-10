@@ -1,6 +1,7 @@
 (ns earthgen.math.random
   (:refer-clojure :exclude [next take])
-  (:require ["seedrandom" :as sr]))
+  (:require ["seedrandom" :as sr]
+            [earthgen.interop.array :as js-array]))
 
 (defn reseed [state]
   (sr "" (clj->js {:state state})))
@@ -16,13 +17,8 @@
 
 (defn take [n state]
   (let
-   [[rng result]
-    (reduce (fn [[rng res] _]
-              (let
-               [a (rng)]
-                [rng (conj res a)]))
-            [(reseed state) []]
-            (range n))]
+   [rng (reseed state)
+    result (js-array/build n rng)]
     [(.state rng) result]))
 
 (defn from-list [ls a]

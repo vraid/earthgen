@@ -53,8 +53,8 @@
         [rng tiles] (random/take (tile-count grid) rng)
         [rng corners] (random/take (corner-count grid) rng)
         initial (-> grid
-                    (with-tile-elevation (apply array (map (to-elevation amplitude) tiles)))
-                    (with-corner-elevation (corner-elevation midpoint? (apply array (map (to-elevation (* scale amplitude)) corners)))))]
+                    (with-tile-elevation (js-array/map (to-elevation amplitude) tiles))
+                    (with-corner-elevation (corner-elevation midpoint? (js-array/map (to-elevation (* scale amplitude)) corners))))]
         (loop [rng rng
                scale scale
                grids (rest grids)
@@ -67,7 +67,7 @@
               [rng nums] (random/take (corner-count grid) rng)
               result (-> grid
                          (with-tile-elevation (js-array/concat (:tile-elevation result) (:corner-elevation result)))
-                         (with-corner-elevation (corner-elevation true (apply array (map (to-elevation (* scale amplitude)) nums)))))]
+                         (with-corner-elevation (corner-elevation true (js-array/map (to-elevation (* scale amplitude)) nums))))]
               (recur rng scale (rest grids) result))))))))
 
 (defn sea-level [level]
