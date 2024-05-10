@@ -43,7 +43,7 @@
 (defn eval-expr [env n]
   (fn [rng a]
     (cond
-      (number? a) [rng (apply array (repeat n a))]
+      (number? a) [rng (js-array/make n a)]
       (string? a) [rng (get env a)]
       (map? a) [rng a]
       (seq a) (let
