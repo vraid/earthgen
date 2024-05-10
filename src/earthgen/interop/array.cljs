@@ -40,11 +40,15 @@
   (.slice arr n (count arr)))
 
 (defn make [count init]
-  (.fill (array count) init))
+  (let
+   [arr (array)]
+    (doseq [_ (range count)]
+      (.push arr init))
+    arr))
 
 (defn build [count f]
   (let
-   [arr (make count nil)]
+   [arr (array)]
     (doseq [n (range count)]
-      (aset arr n (f n)))
+      (.push arr (f n)))
     arr))
