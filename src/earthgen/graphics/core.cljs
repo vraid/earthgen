@@ -9,12 +9,9 @@
 (defn make-shader [gl]
   (sh/make-shader-from-spec gl default-shader))
 
-(defn draw-canvas [gl shader uniforms models]
+(defn draw-canvas [gl buffers]
   (gl/set-viewport gl (gl/get-viewport-rect gl))
   (gl/cull-faces gl glc/back)
   (gl/clear-color-and-depth-buffer gl 0 0 0 1 1)
-  (doseq [model models]
-    (gl/draw-with-shader gl (-> model
-                                (gl/make-buffers-in-spec gl glc/static-draw)
-                                (update :uniforms merge uniforms)
-                                (assoc :shader shader)))))
+  (doseq [buffer buffers]
+    (gl/draw-with-shader gl buffer)))

@@ -3,6 +3,7 @@
             [reagent.core :as reagent]
             [reagent.dom :as rdom]
             [thi.ng.geom.gl.core :as gl]
+            [thi.ng.geom.gl.webgl.constants :as glc]
             [earthgen.subs :as subs]
             [earthgen.events :as events]
             [earthgen.input :as input]
@@ -20,8 +21,22 @@
                   [props (reagent/props canvas)
                    perspective (:perspective props)
                    gl (gl/gl-context (rdom/dom-node canvas))
-                   camera ((:camera perspective) perspective (gl/get-viewport-rect gl))]
-                   (graphics/draw-canvas gl (:shader props) camera (:models props))))]
+                   camera ((:camera perspective) perspective (gl/get-viewport-rect gl))
+                   models (:models props)
+                   shader (:shader props)
+                   buffers (:buffers props)
+                   nil-buffers? (not buffers)
+                   buffers (if nil-buffers?
+                             (mapv (fn [model]
+                                     (gl/make-buffers-in-spec model gl glc/static-draw))
+                                   models)
+                             buffers)
+                   transform-buffer (fn [buffer]
+                                      (-> buffer
+                                          (update :uniforms merge camera)
+                                          (assoc :shader shader)))]
+                   (graphics/draw-canvas gl (mapv transform-buffer buffers))
+                   (when nil-buffers? (re-frame/dispatch [::events/set-buffers buffers]))))]
     (reagent/create-class
      {:reagent-render (fn []
                         [:canvas {:width 1000
@@ -185,5 +200,5 @@
                  :read-only true
                  :value (.stringify js/JSON (clj->js model))}]
      [view-section view]
-     [canvas-outer] 
+     [canvas-outer]
      [:div (str "Current rotation [" (clj->js (quaternion/product (quaternion/conjugate (:current-rotation view)) (:planet-rotation view))) "]")]]))

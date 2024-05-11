@@ -20,17 +20,26 @@
    (assoc-in db [:graphics :shader] shader)))
 
 (re-frame/reg-event-db
+ ::set-buffers
+ (fn [db [_ buffers]]
+   (assoc-in db [:graphics :buffers] buffers)))
+
+(re-frame/reg-event-db
  ::set-view
  (fn [db [_ view]]
    (assoc db :view view)))
 
+(defn reset-buffers [db]
+  (assoc-in db [:graphics :buffers] nil))
+
 (defn update-models [db]
-  (assoc-in db
-            [:graphics :models]
-            [(models/contoured-tiles
-              (get-in db [:graphics :perspective :projection])
-              map-modes/elevation
-              (:planet db))]))
+  (-> db
+      reset-buffers
+      (assoc-in [:graphics :models]
+                [(models/contoured-tiles
+                  (get-in db [:graphics :perspective :projection])
+                  map-modes/elevation
+                  (:planet db))])))
 
 (defn update-current-perspective [db]
   (let
