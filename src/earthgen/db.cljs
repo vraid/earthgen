@@ -34,39 +34,41 @@
      used-grids
      (generic/input-transforms model))
     perspectives
-    {:spherical
-     {:name "Spherical"
-      :camera camera/spherical
-      :init perspective/init-spherical
-      :update perspective/update-spherical
-      :projection projection/identity
-      :rotation {:latitude 0
-                 :longitude 0}
-      :distance 3}
-     :hammer
-     {:name "Hammer"
-      :camera camera/hammer
-      :init perspective/init-hammer
-      :update perspective/update-hammer
-      :projection projection/hammer
-      :scale 3}}
+    [[:spherical
+      {:label "Spherical"
+       :camera camera/spherical
+       :init perspective/init-spherical
+       :update perspective/update-spherical
+       :projection projection/identity
+       :rotation {:latitude 0
+                  :longitude 0}
+       :distance 3}]
+     [:hammer
+      {:label "Hammer"
+       :camera camera/hammer
+       :init perspective/init-hammer
+       :update perspective/update-hammer
+       :projection projection/hammer
+       :scale 3}]]
+    perspective-dict (into {} perspectives)
     current-perspective :spherical]
     {:grids grids
      :planet planet
      :graphics {:shader nil
                 :buffers nil
                 :models [(models/contoured-tiles
-                          (get-in perspectives [current-perspective :projection])
+                          (get-in perspective-dict [current-perspective :projection])
                           map-modes/elevation
                           planet)]
-                :perspective (get perspectives current-perspective)}
-     :perspectives perspectives
+                :perspective (get perspective-dict current-perspective)}
+     :perspectives perspective-dict
      :model model
      :view {:subdivisions (str subdivisions)
             :subdivision-timeout (str loaded-timeout)
             :mode :predefined
             :simple-terrain (validation/simple-terrain-str-values simple-terrain)
             :custom ""
+            :perspectives (map (fn [[k v]] [k (:label v)]) perspectives)
             :current-perspective current-perspective
             :planet-rotation (:rotation planet)
             :current-rotation quaternion/identity}

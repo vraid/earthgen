@@ -115,19 +115,25 @@
     (button "Supercontinents" (generate predefined/supercontinents))
     (button "Archipelago" (generate predefined/archipelago))]])
 
-(defn view-section [view]
+(defn to-option [[k label]]
+  [:option {:key k} label])
+
+(defn view-section [perspectives current-value]
   [:div
    [:h3 "View"]
    [:div
     [:label "Projection "]
-    [:select.form-control
-     {:style button-style
-      :field :list
-      :id :projection-input
-      :value (get-in view [(:current-perspective view) :name])
-      :on-change (fn [e] (re-frame/dispatch [::events/set-perspective (get {"Spherical" :spherical "Hammer" :hammer} (gettext e))]))}
-     [:option {:key :spherical} "Spherical"]
-     [:option {:key :hammer} "Hammer"]]]])
+    (into
+     [:select.form-control
+      {:style button-style
+       :field :list
+       :id :projection-input
+       :value current-value
+       :on-change (fn [e]
+                    (re-frame/dispatch
+                     [::events/set-perspective
+                      (get (into {} (map (comp vec reverse) perspectives)) (gettext e))]))}]
+     (map to-option perspectives))]])
 
 (defn main-panel []
   (let
@@ -199,6 +205,8 @@
                  :rows 8
                  :read-only true
                  :value (.stringify js/JSON (clj->js model))}]
-     [view-section view]
+     [view-section
+      (:perspectives view)
+      (get-in view [(:current-perspective view) :name])]
      [canvas-outer]
      [:div (str "Current rotation [" (clj->js (quaternion/product (quaternion/conjugate (:current-rotation view)) (:planet-rotation view))) "]")]]))
