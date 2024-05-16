@@ -8,7 +8,6 @@
             [earthgen.events :as events]
             [earthgen.input :as input]
             [earthgen.graphics.core :as graphics]
-            [earthgen.generation.predefined :as predefined]
             [earthgen.math.quaternion :as quaternion]))
 
 (defn canvas-inner []
@@ -105,15 +104,12 @@
         (button "Generate" (generate to-input))]
        [:div "Invalid JSON"])]))
 
-(defn predefined-mode [generate button]
+(defn predefined-mode [options]
   [:div
    [:h3]
    [:div "Press a button to generate a planet of that type"]
    [:div "Results will trend towards description, but may sometimes diverge"]
-   [:div
-    (button "Continents" (generate predefined/continents))
-    (button "Supercontinents" (generate predefined/supercontinents))
-    (button "Archipelago" (generate predefined/archipelago))]])
+   (into [:div] options)])
 
 (defn to-option [[k label]]
   [:option {:key k} label])
@@ -187,8 +183,8 @@
       (if (= :custom mode) "Text input" (button "Text input" (set-mode :custom)))]
      (case mode
        :predefined [predefined-mode
-                    generate-model
-                    button]
+                    (map (fn [[k f]] (button k (generate-model f)))
+                         (:predefined-options view))]
        :simple [simple-mode
                 #(re-frame/dispatch [::events/generate-simple subdivisions (:simple-terrain view)])
                 input

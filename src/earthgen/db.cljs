@@ -66,6 +66,9 @@
      :view {:subdivisions (str subdivisions)
             :subdivision-timeout (str loaded-timeout)
             :mode :predefined
+            :predefined-options [["Continents" predefined/continents]
+                                 ["Supercontinents" predefined/supercontinents]
+                                 ["Archipelago" predefined/archipelago]]
             :simple-terrain (validation/simple-terrain-str-values simple-terrain)
             :custom ""
             :perspectives (map (fn [[k v]] [k (:label v)]) perspectives)
