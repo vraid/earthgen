@@ -130,6 +130,35 @@
                       (get (into {} (map (comp vec reverse) perspectives)) (gettext e))]))}]
      (map to-option perspectives))]])
 
+(def tabs
+  (let
+   [tab-button (let
+                [common-style {:border-radius "4px 4px 0 0"
+                               :padding "10px"}]
+                 (fn [active? label on-click]
+                   (if active?
+                     [:button
+                      {:style (into
+                               common-style
+                               {:border "1px solid black"
+                                :border-bottom "1px solid white"
+                                :z-index 2
+                                :background-color :transparent})}
+                      label]
+                     [:button
+                      {:style (into
+                               common-style
+                               {:border "1px solid lightgray"
+                                :border-bottom "1px solid black"})
+                       :on-click on-click}
+                      label])))]
+    (fn [select-fn current items]
+      (mapv (fn [item]
+              (let
+               [[option label] item]
+                (tab-button (= option current) label (select-fn option))))
+            items))))
+
 (defn main-panel []
   (let
    [view @(re-frame/subscribe [::subs/view])
@@ -186,11 +215,14 @@
         "Timeout (ms) "
         (input [:subdivision-timeout])]
        [:div [:sup "Limits grid size if subdivision takes too long. No limit if empty"]]
-       [:div
-        [:b "Terrain : "]
-        (if (= :predefined mode) "Suggested" (button "Suggested" (set-mode :predefined)))
-        (if (= :simple mode) "Simple" (button "Simple" (set-mode :simple)))
-        (if (= :custom mode) "Text input" (button "Text input" (set-mode :custom)))]
+       (into
+        [:div
+         [:b "Terrain "]]
+        (tabs set-mode
+              mode
+              [[:predefined "Suggested"]
+               [:simple "Simple"]
+               [:custom "Text input"]]))
        (case mode
          :predefined [predefined-mode
                       (map (fn [[k f]] (button k (generate-model f)))
@@ -203,7 +235,8 @@
                   generate-model
                   view
                   update-input
-                  button])
+                  button]
+         [:div ""])
        [:h3]
        [:b "Output"]
        [:div [:sub "Copy-paste into the text input box to recreate"]]
