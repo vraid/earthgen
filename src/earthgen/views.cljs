@@ -183,7 +183,11 @@
              [:button
               {:style button-style
                :on-click on-click}
-              label])]
+              label])
+    section-delimiter [[:h3]
+                       [:div {:style {:border-bottom "1px solid black"
+                                      :width "350px"}}]
+                       [:h3]]]
     [:div
      [:h1 "Earthgen"]
      [:div {:style {:display :flex
@@ -196,51 +200,57 @@
        [view-section
         (:perspectives view)
         (get-in view [(:current-perspective view) :name])]]
-      [:div
-       [:h3 "Generation"]
-       [:b "Grid"]
-       [:div
-        "Subdivisions "
-        (input [:subdivisions])]
-       [:div [:sup "[0, 1, 2 ...] Each increment roughly triples the polygon count"]]
-       [:div [:sup (let
-                    [parsed (parse-long subdivisions)
-                     num (or (and parsed (max 0 parsed)) 0)]
-                     (str num " "
-                          (if (= 1 num) "subdivision" "subdivisions")
-                          " will create "
-                          (+ 2 (* 10 (Math/pow 3 num)))
-                          " polygons"))]]
-       [:div
-        "Timeout (ms) "
-        (input [:subdivision-timeout])]
-       [:div [:sup "Limits grid size if subdivision takes too long. No limit if empty"]]
-       (into
+      (vec
+       (concat
         [:div
-         [:b "Terrain "]]
-        (tabs set-mode
-              mode
-              [[:predefined "Suggested"]
-               [:simple "Simple"]
-               [:custom "Text input"]]))
-       (case mode
-         :predefined [predefined-mode
-                      (map (fn [[k f]] (button k (generate-model f)))
-                           (:predefined-options view))]
-         :simple [simple-mode
-                  #(re-frame/dispatch [::events/generate-simple subdivisions (:simple-terrain view)])
-                  input
-                  button]
-         :custom [custom-mode
-                  generate-model
-                  view
-                  update-input
-                  button]
-         [:div ""])
-       [:h3]
-       [:b "Output"]
-       [:div [:sub "Copy-paste into the text input box to recreate"]]
-       [:textarea {:cols 40
-                   :rows 8
-                   :read-only true
-                   :value (.stringify js/JSON (clj->js model))}]]]]))
+         [:h3 "Generation"]]
+        section-delimiter
+        [[:b "Grid"]
+         [:h3]
+         [:div
+          "Subdivisions "
+          (input [:subdivisions])]
+         [:div [:sup "[0, 1, 2 ...] Each increment roughly triples the polygon count"]]
+         [:div [:sup (let
+                      [parsed (parse-long subdivisions)
+                       num (or (and parsed (max 0 parsed)) 0)]
+                       (str num " "
+                            (if (= 1 num) "subdivision" "subdivisions")
+                            " will create "
+                            (+ 2 (* 10 (Math/pow 3 num)))
+                            " polygons"))]]
+         [:div
+          "Timeout (ms) "
+          (input [:subdivision-timeout])]
+         [:div [:sup "Limits grid size if subdivision takes too long. No limit if empty"]]]
+        section-delimiter
+        [[:b "Terrain"]
+         [:h3]
+         (into
+          [:div]
+          (tabs set-mode
+                mode
+                [[:predefined "Suggested"]
+                 [:simple "Simple"]
+                 [:custom "Text input"]]))
+         (case mode
+           :predefined [predefined-mode
+                        (map (fn [[k f]] (button k (generate-model f)))
+                             (:predefined-options view))]
+           :simple [simple-mode
+                    #(re-frame/dispatch [::events/generate-simple subdivisions (:simple-terrain view)])
+                    input
+                    button]
+           :custom [custom-mode
+                    generate-model
+                    view
+                    update-input
+                    button]
+           [:div ""])]
+        section-delimiter
+        [[:b "Output"]
+         [:div [:sub "Copy-paste into the text input box to recreate"]]
+         [:textarea {:cols 40
+                     :rows 8
+                     :read-only true
+                     :value (.stringify js/JSON (clj->js model))}]]))]]))
