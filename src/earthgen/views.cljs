@@ -116,7 +116,6 @@
 
 (defn view-section [perspectives current-value]
   [:div
-   [:h3 "View"]
    [:div
     [:label "Projection "]
     (into
@@ -156,53 +155,59 @@
               {:style button-style
                :on-click on-click}
               label])]
-    [:div {:on-mouse-up input/mouse-up
-           :on-mouse-move input/mouse-move}
+    [:div
      [:h1 "Earthgen"]
-     [:b "Grid"]
-     [:div
-      "Subdivisions "
-      (input [:subdivisions])]
-     [:div [:sup "[0, 1, 2 ...] Each increment roughly triples the polygon count"]]
-     [:div [:sup (let
-                  [parsed (parse-long subdivisions)
-                   num (or (and parsed (max 0 parsed)) 0)]
-                   (str num " "
-                        (if (= 1 num) "subdivision" "subdivisions")
-                        " will create "
-                        (+ 2 (* 10 (Math/pow 3 num)))
-                        " polygons"))]]
-     [:div
-      "Timeout (ms) "
-      (input [:subdivision-timeout])]
-     [:div [:sup "Limits grid size if subdivision takes too long. No limit if empty"]]
-     [:div
-      [:b "Terrain : "]
-      (if (= :predefined mode) "Suggested" (button "Suggested" (set-mode :predefined)))
-      (if (= :simple mode) "Simple" (button "Simple" (set-mode :simple)))
-      (if (= :custom mode) "Text input" (button "Text input" (set-mode :custom)))]
-     (case mode
-       :predefined [predefined-mode
-                    (map (fn [[k f]] (button k (generate-model f)))
-                         (:predefined-options view))]
-       :simple [simple-mode
-                #(re-frame/dispatch [::events/generate-simple subdivisions (:simple-terrain view)])
-                input
-                button]
-       :custom [custom-mode
-                generate-model
-                view
-                update-input
-                button])
-     [:h3]
-     [:b "Output"]
-     [:div [:sub "Copy-paste into the text input box to recreate"]]
-     [:textarea {:cols 40
-                 :rows 8
-                 :read-only true
-                 :value (.stringify js/JSON (clj->js model))}]
-     [view-section
-      (:perspectives view)
-      (get-in view [(:current-perspective view) :name])]
-     [canvas-outer]
-     [:div (str "Current rotation [" (clj->js (quaternion/product (quaternion/conjugate (:current-rotation view)) (:planet-rotation view))) "]")]]))
+     [:div {:style {:display :flex
+                    :flex-wrap :wrap}
+            :on-mouse-up input/mouse-up
+            :on-mouse-move input/mouse-move}
+      [:div {:style {:min-width "1050px"}}
+       [canvas-outer]
+       [:div (str "Current rotation [" (clj->js (quaternion/product (quaternion/conjugate (:current-rotation view)) (:planet-rotation view))) "]")]
+       [view-section
+        (:perspectives view)
+        (get-in view [(:current-perspective view) :name])]]
+      [:div
+       [:h3 "Generation"]
+       [:b "Grid"]
+       [:div
+        "Subdivisions "
+        (input [:subdivisions])]
+       [:div [:sup "[0, 1, 2 ...] Each increment roughly triples the polygon count"]]
+       [:div [:sup (let
+                    [parsed (parse-long subdivisions)
+                     num (or (and parsed (max 0 parsed)) 0)]
+                     (str num " "
+                          (if (= 1 num) "subdivision" "subdivisions")
+                          " will create "
+                          (+ 2 (* 10 (Math/pow 3 num)))
+                          " polygons"))]]
+       [:div
+        "Timeout (ms) "
+        (input [:subdivision-timeout])]
+       [:div [:sup "Limits grid size if subdivision takes too long. No limit if empty"]]
+       [:div
+        [:b "Terrain : "]
+        (if (= :predefined mode) "Suggested" (button "Suggested" (set-mode :predefined)))
+        (if (= :simple mode) "Simple" (button "Simple" (set-mode :simple)))
+        (if (= :custom mode) "Text input" (button "Text input" (set-mode :custom)))]
+       (case mode
+         :predefined [predefined-mode
+                      (map (fn [[k f]] (button k (generate-model f)))
+                           (:predefined-options view))]
+         :simple [simple-mode
+                  #(re-frame/dispatch [::events/generate-simple subdivisions (:simple-terrain view)])
+                  input
+                  button]
+         :custom [custom-mode
+                  generate-model
+                  view
+                  update-input
+                  button])
+       [:h3]
+       [:b "Output"]
+       [:div [:sub "Copy-paste into the text input box to recreate"]]
+       [:textarea {:cols 40
+                   :rows 8
+                   :read-only true
+                   :value (.stringify js/JSON (clj->js model))}]]]]))
