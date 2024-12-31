@@ -53,11 +53,11 @@
      :model model
      :view {:subdivisions (str subdivisions)
             :subdivision-timeout (str loaded-timeout)
-            :mode :predefined
-            :predefined-options [["Continents" predefined/continents]
-                                 ["Supercontinents" predefined/supercontinents]
-                                 ["Archipelago" predefined/archipelago]]
-            :custom ""
+            :terrain-mode :predefined
+            :predefined-terrain-options [["Continents" predefined/continents]
+                                         ["Supercontinents" predefined/supercontinents]
+                                         ["Archipelago" predefined/archipelago]]
+            :custom-terrain ""
             :perspectives (map (fn [[k v]] [k (:label v)]) perspectives)
             :current-perspective current-perspective
             :planet-rotation (:rotation planet)

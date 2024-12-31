@@ -60,9 +60,9 @@
   {:padding "8px 8px"
    :margin "4px 4px"})
 
-(defn custom-mode [generate view update-input button]
+(defn custom-terrain-mode [generate view update-input button]
   (let
-   [to-input #(js->clj (.parse js/JSON (:custom view)) :keywordize-keys true)
+   [to-input #(js->clj (.parse js/JSON (:custom-terrain view)) :keywordize-keys true)
     valid? (try (to-input)
                 (catch js/Object _ false))]
     [:div
@@ -71,14 +71,14 @@
      [:div "or change the parameters to try something new"]
      [:textarea {:cols 40
                  :rows 8
-                 :value (:custom view)
-                 :on-change (update-input [:custom])}]
+                 :value (:custom-terrain view)
+                 :on-change (update-input [:custom-terrain])}]
      (if valid?
        [:div
         (button "Generate" (generate to-input))]
        [:div "Invalid JSON"])]))
 
-(defn predefined-mode [options]
+(defn predefined-terrain-mode [options]
   [:div
    [:h3]
    [:div "Press a button to generate a planet of that type"]
@@ -135,7 +135,7 @@
 (defn main-panel []
   (let
    [view @(re-frame/subscribe [::subs/view])
-    mode (:mode view)
+    terrain-mode (:terrain-mode view)
     model @(re-frame/subscribe [::subs/model])
     subdivisions (:subdivisions view)
     generate-model (fn [model]
@@ -144,10 +144,10 @@
     update-input (fn [keys]
                    (fn [e] (re-frame/dispatch
                             [::events/set-view (assoc-in view keys (gettext e))])))
-    set-mode (fn [mode]
-               (fn [_]
-                 (re-frame/dispatch
-                  [::events/set-view (assoc view :mode mode)])))
+    set-terrain-mode (fn [mode]
+                       (fn [_]
+                         (re-frame/dispatch
+                          [::events/set-view (assoc view :terrain-mode mode)])))
     input (fn [keys]
             [:input {:type "text"
                      :value (get-in view keys)
@@ -203,15 +203,15 @@
          [:h3]
          (into
           [:div]
-          (tabs set-mode
-                mode
+          (tabs set-terrain-mode
+                terrain-mode
                 [[:predefined "Suggested"]
                  [:custom "Text input"]]))
-         (case mode
-           :predefined [predefined-mode
+         (case terrain-mode
+           :predefined [predefined-terrain-mode
                         (map (fn [[k f]] (button k (generate-model f)))
-                             (:predefined-options view))]
-           :custom [custom-mode
+                             (:predefined-terrain-options view))]
+           :custom [custom-terrain-mode
                     generate-model
                     view
                     update-input
