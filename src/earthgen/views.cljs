@@ -60,32 +60,6 @@
   {:padding "8px 8px"
    :margin "4px 4px"})
 
-(defn simple-mode [generate input button]
-  [:div
-   [:h3 " "]
-   [:div
-    "Seed "
-    (input [:simple-terrain :seed])]
-   [:sup "Any text. Each seed will give the same result across different devices"]
-   [:div
-    "Granularity "
-    (input [:simple-terrain :granularity])]
-   [:sup "[0, 1, 2 ...] Lower values result in larger oceans and continents"]
-   [:div
-    "Irregularity "
-    (input [:simple-terrain :irregularity])]
-   [:sup "0-1. Lower values result in a smoother topography"]
-   [:div
-    "Amplitude "
-    (input [:simple-terrain :amplitude])]
-   [:sup "Any number. Elevation scales linearly to this value"]
-   [:div
-    "Sea level "
-    (input [:simple-terrain :sea-level])]
-   [:sup "Floods the land"]
-   [:div
-    (button "Generate" generate)]])
-
 (defn custom-mode [generate view update-input button]
   (let
    [to-input #(js->clj (.parse js/JSON (:custom view)) :keywordize-keys true)
@@ -232,16 +206,11 @@
           (tabs set-mode
                 mode
                 [[:predefined "Suggested"]
-                 [:simple "Simple"]
                  [:custom "Text input"]]))
          (case mode
            :predefined [predefined-mode
                         (map (fn [[k f]] (button k (generate-model f)))
                              (:predefined-options view))]
-           :simple [simple-mode
-                    #(re-frame/dispatch [::events/generate-simple subdivisions (:simple-terrain view)])
-                    input
-                    button]
            :custom [custom-mode
                     generate-model
                     view

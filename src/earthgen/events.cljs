@@ -4,7 +4,6 @@
             [earthgen.perspective :as perspective]
             [earthgen.validation :as validation]
             [earthgen.generation.core :as generation]
-            [earthgen.generation.operations :as ops]
             [earthgen.generation.generic :as generic]
             [earthgen.graphics.models :as models]
             [earthgen.graphics.map-modes :as map-modes]))
@@ -83,22 +82,6 @@
  ::generate
  (fn [db [_ subdivisions input]]
    (generate db subdivisions input)))
-
-(re-frame/reg-event-db
- ::generate-simple
- (fn [db [_ subdivisions input]]
-   (let
-    [validated (validation/validate-terrain input)
-     param (partial get-in validated)]
-     (-> db
-         (assoc-in [:view :simple-terrain] input)
-         (generate subdivisions
-                   (ops/terrain (param [:seed])
-                                (param [:sea-level])
-                                (ops/heightmap
-                                 {:granularity (param [:granularity])
-                                  :irregularity (param [:irregularity])
-                                  :amplitude (param [:amplitude])})))))))
 
 (re-frame/reg-event-fx
  ::tick

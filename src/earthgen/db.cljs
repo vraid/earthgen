@@ -1,6 +1,5 @@
 (ns earthgen.db
-  (:require [earthgen.math.random :as random]
-            [earthgen.math.quaternion :as quaternion]
+  (:require [earthgen.math.quaternion :as quaternion]
             [earthgen.math.projection :as projection]
             [earthgen.perspective :as perspective]
             [earthgen.graphics.models :as models]
@@ -9,8 +8,7 @@
             [earthgen.grid.core :as grid]
             [earthgen.generation.core :as generation]
             [earthgen.generation.generic :as generic]
-            [earthgen.generation.predefined :as predefined]
-            [earthgen.validation :as validation]))
+            [earthgen.generation.predefined :as predefined]))
 
 (def default-db
   (let
@@ -18,16 +16,6 @@
     startup-timeout 200
     loaded-timeout 2000
     [subdivisions used-grids] (generation/grids-with-timeout grids startup-timeout 20)
-    seed (random/random-seed 12)
-    granularity 2
-    irregularity 0.4
-    amplitude 8000
-    sea-level 3000
-    simple-terrain {:seed seed
-                    :granularity granularity
-                    :irregularity irregularity
-                    :amplitude amplitude
-                    :sea-level sea-level}
     model (generic/from-input (predefined/continents))
     [_ planet]
     (generation/transform
@@ -69,7 +57,6 @@
             :predefined-options [["Continents" predefined/continents]
                                  ["Supercontinents" predefined/supercontinents]
                                  ["Archipelago" predefined/archipelago]]
-            :simple-terrain (validation/simple-terrain-str-values simple-terrain)
             :custom ""
             :perspectives (map (fn [[k v]] [k (:label v)]) perspectives)
             :current-perspective current-perspective
