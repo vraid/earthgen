@@ -116,19 +116,18 @@
 
 (defn view-section [perspectives current-value]
   [:div
-   [:div
-    [:label "Projection "]
-    (into
-     [:select.form-control
-      {:style button-style
-       :field :list
-       :id :projection-input
-       :value current-value
-       :on-change (fn [e]
-                    (re-frame/dispatch
-                     [::events/set-perspective
-                      (get (into {} (map (comp vec reverse) perspectives)) (gettext e))]))}]
-     (map to-option perspectives))]])
+   [:label "Projection "]
+   (into
+    [:select.form-control
+     {:style button-style
+      :field :list
+      :id :projection-input
+      :value current-value
+      :on-change (fn [e]
+                   (re-frame/dispatch
+                    [::events/set-perspective
+                     (get (into {} (map (comp vec reverse) perspectives)) (gettext e))]))}]
+    (map to-option perspectives))])
 
 (def tabs
   (let
@@ -196,14 +195,16 @@
             :on-mouse-move input/mouse-move}
       [:div {:style {:min-width "1050px"}}
        [canvas-outer]
-       [:div (str "Current rotation [" (clj->js (quaternion/product (quaternion/conjugate (:current-rotation view)) (:planet-rotation view))) "]")]
-       [view-section
-        (:perspectives view)
-        (get-in view [(:current-perspective view) :name])]]
+       [:div (str "Current rotation [" (clj->js (quaternion/product (quaternion/conjugate (:current-rotation view)) (:planet-rotation view))) "]")]]
       (vec
        (concat
-        [:div
-         [:h3 "Generation"]]
+        [:div]
+        [[:h3 "View settings"]]
+        section-delimiter
+        [[view-section
+          (:perspectives view)
+          (get-in view [(:current-perspective view) :name])]]
+        [[:h3 "Generation"]]
         section-delimiter
         [[:b "Grid"]
          [:h3]
