@@ -60,19 +60,33 @@
   {:padding "8px 8px"
    :margin "4px 4px"})
 
-(defn custom-terrain-mode [generate view update-input button]
+(def section-delimiter [[:h3]
+                        [:div {:style {:border-bottom "1px solid black"
+                                       :width "350px"}}]
+                        [:h3]])
+
+(defn custom-terrain-mode [generate model view update-input button]
   (let
    [to-input #(js->clj (.parse js/JSON (:custom-terrain view)) :keywordize-keys true)
     valid? (try (to-input)
                 (catch js/Object _ false))]
     [:div
-     [:h3]
-     [:div "Input text to recreate a previous result,"]
-     [:div "or change the parameters to try something new"]
-     [:textarea {:cols 40
-                 :rows 8
-                 :value (:custom-terrain view)
-                 :on-change (update-input [:custom-terrain])}]
+     [:div
+      [:h3]
+      [:b "Output"]
+      [:div [:sub "Currently generated terrain. Copy to save or share"]]
+      [:textarea {:cols 40
+                  :rows 8
+                  :read-only true
+                  :value (.stringify js/JSON (clj->js model))}]]
+     [:div
+      [:h3]
+      [:b "Input"]
+      [:div [:sub "Paste a previous result to recreate"]]
+      [:textarea {:cols 40
+                  :rows 8
+                  :value (:custom-terrain view)
+                  :on-change (update-input [:custom-terrain])}]]
      (if valid?
        [:div
         (button "Generate" (generate to-input))]
@@ -156,11 +170,7 @@
              [:button
               {:style button-style
                :on-click on-click}
-              label])
-    section-delimiter [[:h3]
-                       [:div {:style {:border-bottom "1px solid black"
-                                      :width "350px"}}]
-                       [:h3]]]
+              label])]
     [:div
      [:h1 "Earthgen"]
      [:div {:style {:display :flex
@@ -206,21 +216,15 @@
           (tabs set-terrain-mode
                 terrain-mode
                 [[:predefined "Suggested"]
-                 [:custom "Text input"]]))
+                 [:custom "Save / Load"]]))
          (case terrain-mode
            :predefined [predefined-terrain-mode
                         (map (fn [[k f]] (button k (generate-model f)))
                              (:predefined-terrain-options view))]
            :custom [custom-terrain-mode
                     generate-model
+                    model
                     view
                     update-input
                     button]
-           [:div ""])]
-        section-delimiter
-        [[:b "Output"]
-         [:div [:sub "Copy-paste into the text input box to recreate"]]
-         [:textarea {:cols 40
-                     :rows 8
-                     :read-only true
-                     :value (.stringify js/JSON (clj->js model))}]]))]]))
+           [:div ""])]))]]))
