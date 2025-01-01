@@ -44,8 +44,7 @@
   (let
    [perspective (get-in db [:perspectives (get-in db [:view :current-perspective])])]
     (-> db
-        (assoc-in [:graphics :perspective]
-                  (get-in db [:perspectives (get-in db [:view :current-perspective])]))
+        (assoc-in [:graphics :perspective] perspective)
         ((:init perspective) perspective))))
 
 (re-frame/reg-event-db
